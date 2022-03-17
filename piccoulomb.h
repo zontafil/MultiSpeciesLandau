@@ -1,5 +1,6 @@
 typedef double real;  /**< Double precision float   */
 #include <math.h>
+#include <iostream>
 #include <stdio.h>
 #include <iomanip>
 #include <limits>
@@ -14,6 +15,7 @@ using namespace Eigen;
 #define PI2E0_5 2.50662827463
 
 enum {
+    VERBOSE_SILLY = 3,
     VERBOSE_DEBUG = 2,
     VERBOSE_NORMAL = 1,
     VERBOSE_MINIMAL = 0,
@@ -40,12 +42,14 @@ typedef struct {
     double h;
     double eps;
     int n_timesteps;
-    int n_newton;
+    double newtonTolerance;
+    int useNewton;
     Vector2d u1;
     Vector2d u2;
     double* kHermite;
     double* wHermite;
     int nHermite;
+    int recordAtStep;
 } Config;
 
 typedef struct {
@@ -56,21 +60,37 @@ typedef struct {
 double f(Vector2d v, Config* config);
 void initMarkers(Particle2d* p, Config* config);
 double psi(Vector2d v, double eps);
-void pushForward_iteration(
+int pushForward_dv(
     Particle2d* p0,
     Particle2d* p1,
+    VectorXd* dSdV,
+    Config* config
+);
+int pushForward_iteration(
+    Particle2d* p0,
+    Particle2d* p1,
+    VectorXd* dSdV,
+    Config* config
+);
+void f_eqmotion_dv(
+    VectorXd* dv,
+    Particle2d* p0,
+    Particle2d* p1,
+    VectorXd* dSdV,
     Config* config
 );
 void f_eqmotion(
     VectorXd* f,
     Particle2d* p0,
     Particle2d* p1,
+    VectorXd* dSdV,
     Config* config
 );
 void buildQGamma(
     MatrixXd* ret,
     Particle2d* p0,
     Particle2d* p1,
+    VectorXd* dSdV,
     Config* config
 );
 void computedSdv(
@@ -80,3 +100,4 @@ void computedSdv(
 );
 void Q(Matrix2d* ret, Vector2d v);
 double K(Particle2d* p, Config* config);
+Vector2d Momentum(Particle2d* p, Config* config);
