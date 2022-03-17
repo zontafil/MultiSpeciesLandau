@@ -5,7 +5,9 @@ DEPS = piccoulomb.h
 OBJ = piccoulomb.o
 OBJTEST = test.o
 
-ifdef VERBOSE
+ifdef SILLY
+	DEFINES+=-DVERBOSE_LEVEL=3
+else ifdef VERBOSE
 	DEFINES+=-DVERBOSE_LEVEL=2
 else
 	DEFINES+=-DVERBOSE_LEVEL=1
