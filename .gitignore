@@ -1,4 +1,4 @@
 *.out
 *.o
-piccoulomb
+coulombStructurePreserving
 __pycache__/
