@@ -1,8 +1,8 @@
 # CC=g++
 CC=mpiCC
-CFLAGS=-fopenmp -lm
-DEPS = coulombStructurePreserving.h
-OBJ = coulombStructurePreserving.o
+CFLAGS=-lm
+DEPS = coulombStructurePreserving.h coulomb_kernel.h
+OBJ = coulomb_kernel.o
 OBJTEST = test.o
 
 ifdef SILLY
@@ -19,14 +19,21 @@ else
 	CFLAGS+=-O3
 endif
 
-CC=g++
+ifdef CUDA
+	CC=nvcc
+	DEFINES+=-DCUDA=1
+else
+	CC=g++
+endif
 
 %.o: %.cpp $(DEPS)
 	$(CC) $(CFLAGS) $(DEFINES) -c -o $@ $<
+%.o: %.cu $(DEPS)
+	$(CC) $(CFLAGS) $(DEFINES) -c -o $@ $<
 
-coulombStructurePreserving: coulombStructurePreserving.o
+coulombStructurePreserving: coulombStructurePreserving.o $(OBJ)
 	$(info Using compiler ${CC})
-	$(CC) $(CFLAGS) -o coulombStructurePreserving $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 test: test.o
 	$(info Using compiler ${CC})
 	$(CC) $(CFLAGS) -o test $(OBJTEST)
