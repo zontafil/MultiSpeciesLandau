@@ -1,4 +1,4 @@
-#include "piccoulomb.h"
+#include "coulombStructurePreserving.h"
 
 using std::setprecision;
 
@@ -6,7 +6,7 @@ Config buildConfig() {
     Config config;
 
     double L = 10;
-    int MARKERS_PER_DIM = 60;
+    int MARKERS_PER_DIM = 10;
 
     // peaks of the double Maxwellian
     Vector2d u1, u2;
@@ -17,8 +17,8 @@ Config buildConfig() {
 
     config.dx = 1E-4; // dx for finite difference derivative
     // config.dt = 1./16.; // time step
-    config.dt = 1.;
-    config.n_timesteps = 1; // number of timesteps
+    config.dt = 1;
+    config.n_timesteps = 100; // number of timesteps
     config.newtonTolerance = 1E-14; // minimum target for error of eq. of motions
     config.useNewton = 0;
     config.nu = 1;
@@ -31,7 +31,7 @@ Config buildConfig() {
     config.ymax = L;
     config.nx = MARKERS_PER_DIM;
     config.ny = MARKERS_PER_DIM;
-    config.recordAtStep = 1;
+    config.recordAtStep = config.n_timesteps - 1;
 
     // double kHermite[5] = {-2.020183, -0.958572, 0.000000, 0.958572, 2.020183};
     // double wHermite[5] = {0.019953, 0.393619, 0.945309, 0.393619, 0.019953};
@@ -68,6 +68,8 @@ int main() {
 
     for (int t=0; t<config.n_timesteps; t++) {
 
+        print_out(VERBOSE_NORMAL, "\nTimestep: %d\n", t);
+
         copy(p1, p1+config.nmarkers, p0);
 
         // precompute entropy gradient
@@ -88,7 +90,6 @@ int main() {
 
         // print system state and debug
         if (t%config.recordAtStep == 0) {
-            print_out(VERBOSE_NORMAL, "\nTimestep: %d\n", t);
 
             E = K(p1, &config);
             print_out(VERBOSE_NORMAL, "Energy: %.15e Error: %.15e\n", E, (E-E0)/E0);
@@ -103,7 +104,6 @@ int main() {
                 }
             }
         }
-
     }
 
     free(p0);

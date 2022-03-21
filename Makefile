@@ -1,8 +1,8 @@
 # CC=g++
 CC=mpiCC
 CFLAGS=-fopenmp -lm
-DEPS = piccoulomb.h
-OBJ = piccoulomb.o
+DEPS = coulombStructurePreserving.h
+OBJ = coulombStructurePreserving.o
 OBJTEST = test.o
 
 ifdef SILLY
@@ -24,12 +24,12 @@ CC=g++
 %.o: %.cpp $(DEPS)
 	$(CC) $(CFLAGS) $(DEFINES) -c -o $@ $<
 
-piccoulomb: piccoulomb.o
+coulombStructurePreserving: coulombStructurePreserving.o
 	$(info Using compiler ${CC})
-	$(CC) $(CFLAGS) -o piccoulomb $(OBJ)
+	$(CC) $(CFLAGS) -o coulombStructurePreserving $(OBJ)
 test: test.o
 	$(info Using compiler ${CC})
 	$(CC) $(CFLAGS) -o test $(OBJTEST)
 
 clean:
-	rm -f *.o piccoulomb test
+	rm -f *.o coulombStructurePreserving test
