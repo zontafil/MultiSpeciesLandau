@@ -19,16 +19,19 @@ else
 	CFLAGS+=-O3
 endif
 
-ifdef CUDA
+ifeq ($(CUDA), 1)
 	CC=nvcc
+	CFLAGS+=--expt-relaxed-constexpr
 	DEFINES+=-DCUDA=1
 else
 	CC=g++
 endif
 
-%.o: %.cpp $(DEPS)
-	$(CC) $(CFLAGS) $(DEFINES) -c -o $@ $<
+ifeq ($(CUDA), 1)
 %.o: %.cu $(DEPS)
+	$(CC) $(CFLAGS) $(DEFINES) -c -o $@ $<
+endif
+%.o: %.cpp $(DEPS)
 	$(CC) $(CFLAGS) $(DEFINES) -c -o $@ $<
 
 coulombStructurePreserving: coulombStructurePreserving.o $(OBJ)
