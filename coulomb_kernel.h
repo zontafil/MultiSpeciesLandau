@@ -11,4 +11,11 @@ namespace Kernel {
         Particle2d* p,
         Config* config
     );
+    void f_eqmotion_dv(
+        VectorXd* dv,
+        Particle2d* p0,
+        Particle2d* p1,
+        VectorXd* dSdV,
+        Config* config
+    );
 }

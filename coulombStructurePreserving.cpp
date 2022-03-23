@@ -162,7 +162,12 @@ int pushForward_dv(
     Config* config
 ) {
     VectorXd f(2*config->nmarkers);
-    f_eqmotion_dv(&f, p0, p1, dSdV, config);
+    Kernel::f_eqmotion_dv(&f, p0, p1, dSdV, config);
+    if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
+        printf("=== dv\n");
+        cout << f << endl;
+        printf("=== dv end\n");
+    }
 
     double znew, err = 0;
     for (int i=0; i<config->nmarkers; i++) {
@@ -233,46 +238,6 @@ int pushForward_iteration(
 }
 
 /**
- * @brief Compute dv of the equations of motion
- * 
- * @param dv 
- * @param p0 
- * @param p1 
- * @param dSdV 
- * @param config 
- */
-void f_eqmotion_dv(
-    VectorXd* dv,
-    Particle2d* p0,
-    Particle2d* p1,
-    VectorXd* dSdV,
-    Config* config
-) {
-    MatrixXd QGamma(2*config->nmarkers, config->nmarkers);
-    buildQGamma(&QGamma, p0, p1, dSdV, config);
-
-    int idx;
-    for (int i=0; i<config->nmarkers; i++) {
-        for (int j=0; j<2; j++) {
-            idx = 2*i+j;
-
-            dv->coeffRef(idx) = 0;
-            for (int k=0; k<config->nmarkers; k++) {
-                dv->coeffRef(idx) += config->nu / config->m * p1[k].weight * QGamma(idx, k);
-            }
-        }
-    }
-
-    if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
-        printf("=== dv\n");
-        for (int i=0; i<config->nmarkers; i++) {
-            printf("%e %e\n", dv->coeffRef(2*i), dv->coeffRef(2*i+1));
-        }
-        printf("=== dv end\n");
-    }
-}
-
-/**
  * @brief Equations of motion for marker trajectories: f(z0, z1) = 0
  * where z0, z1 are two consecutive time steps
  * 
@@ -289,7 +254,7 @@ void f_eqmotion(
     Config* config
 ) {
 
-    f_eqmotion_dv(f, p0, p1, dSdV, config);
+    Kernel::f_eqmotion_dv(f, p0, p1, dSdV, config);
 
     for (int i=0; i<config->nmarkers; i++) {
         for (int j=0; j<2; j++) {
@@ -303,62 +268,6 @@ void f_eqmotion(
             printf("%e %e\n", f->coeffRef(2*i), f->coeffRef(2*i+1));
         }
         printf("=== fcoeff end\n");
-    }
-}
-
-/**
- * @brief Build the product of Q(v_p^{n+1/2} - v_p'^{n+1/2}) and /Gamma(S_eps^n, p, p')
- * 
- * @param ret 
- * @param p0 
- * @param p1 
- * @param config 
- */
-void buildQGamma(
-    MatrixXd* ret,
-    Particle2d* p0,
-    Particle2d* p1,
-    VectorXd* dSdV,
-    Config* config
-) {
-    Vector2d gammaTmp;
-    Matrix2d qTmp;
-
-    for (int i=0; i<config->nmarkers; i++) {
-        for (int j=0; j<config->nmarkers; j++) {
-            if (i==j) {
-                // diagonal, set to 0 (Q*Gamma is antisysmmetric)
-                (*ret).block(2*i, j, 2, 1).setZero();
-            } else if (j<i) {
-                (*ret).block(2*i, j, 2, 1) = -(*ret).block(2*j, i, 2, 1);
-            } else {
-                Q(&qTmp, (p1[i].z + p0[i].z - p1[j].z - p0[j].z) / 2);
-                gammaTmp = dSdV->segment(2*i, 2) - dSdV->segment(2*j, 2);
-                (*ret).block(2*i, j, 2, 1) = qTmp * gammaTmp; // WHY - SIGN ?
-            }
-        }
-    }
-}
-
-
-
-
-/**
- * @brief Perpendicular projection operator Q (eq. 10)
- * 
- * @param ret 
- * @param v 
- */
-void Q(Matrix2d* ret, Vector2d v) {
-    double norm2 = v.squaredNorm();
-    if (norm2 < 1E-14) {
-        ret->setZero();
-    } else {
-        ret->coeffRef(0,0) = - v(0)*v(0) / norm2 + 1;
-        ret->coeffRef(1,1) = - v(1)*v(1) / norm2 + 1;
-        ret->coeffRef(1,0) = - v(1)*v(0) / norm2;
-        ret->coeffRef(0,1) = ret->coeffRef(1,0);
-        *ret /= sqrt(norm2);
     }
 }
 

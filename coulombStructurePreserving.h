@@ -17,13 +17,6 @@ int pushForward_iteration(
     VectorXd* dSdV,
     Config* config
 );
-void f_eqmotion_dv(
-    VectorXd* dv,
-    Particle2d* p0,
-    Particle2d* p1,
-    VectorXd* dSdV,
-    Config* config
-);
 void f_eqmotion(
     VectorXd* f,
     Particle2d* p0,
@@ -31,13 +24,5 @@ void f_eqmotion(
     VectorXd* dSdV,
     Config* config
 );
-void buildQGamma(
-    MatrixXd* ret,
-    Particle2d* p0,
-    Particle2d* p1,
-    VectorXd* dSdV,
-    Config* config
-);
-void Q(Matrix2d* ret, Vector2d v);
 double K(Particle2d* p, Config* config);
 Vector2d Momentum(Particle2d* p, Config* config);

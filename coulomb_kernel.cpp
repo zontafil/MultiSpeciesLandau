@@ -4,6 +4,92 @@
 
 namespace Kernel {
 
+/**
+ * @brief Perpendicular projection operator Q (eq. 10)
+ * 
+ * @param ret 
+ * @param v 
+ */
+void Q(Matrix2d* ret, Vector2d v) {
+    double norm2 = v.squaredNorm();
+    if (norm2 < 1E-14) {
+        ret->setZero();
+    } else {
+        ret->coeffRef(0,0) = - v(0)*v(0) / norm2 + 1;
+        ret->coeffRef(1,1) = - v(1)*v(1) / norm2 + 1;
+        ret->coeffRef(1,0) = - v(1)*v(0) / norm2;
+        ret->coeffRef(0,1) = ret->coeffRef(1,0);
+        *ret /= sqrt(norm2);
+    }
+}
+
+/**
+ * @brief Build the product of Q(v_p^{n+1/2} - v_p'^{n+1/2}) and /Gamma(S_eps^n, p, p')
+ * 
+ * @param ret 
+ * @param p0 
+ * @param p1 
+ * @param config 
+ */
+void buildQGamma(
+    MatrixXd* ret,
+    Particle2d* p0,
+    Particle2d* p1,
+    VectorXd* dSdV,
+    Config* config
+) {
+    Vector2d gammaTmp;
+    Matrix2d qTmp;
+
+    for (int i=0; i<config->nmarkers; i++) {
+        for (int j=0; j<config->nmarkers; j++) {
+            if (i==j) {
+                // diagonal, set to 0 (Q*Gamma is antisysmmetric)
+                (*ret).block(2*i, j, 2, 1).setZero();
+            } else if (j<i) {
+                (*ret).block(2*i, j, 2, 1) = -(*ret).block(2*j, i, 2, 1);
+            } else {
+                Q(&qTmp, (p1[i].z + p0[i].z - p1[j].z - p0[j].z) / 2);
+                gammaTmp = dSdV->segment(2*i, 2) - dSdV->segment(2*j, 2);
+                (*ret).block(2*i, j, 2, 1) = qTmp * gammaTmp; // WHY - SIGN ?
+            }
+        }
+    }
+}
+
+/**
+ * @brief Compute dv of the equations of motion
+ * 
+ * @param dv 
+ * @param p0 
+ * @param p1 
+ * @param dSdV 
+ * @param config 
+ */
+void f_eqmotion_dv(
+    VectorXd* dv,
+    Particle2d* p0,
+    Particle2d* p1,
+    VectorXd* dSdV,
+    Config* config
+) {
+    MatrixXd QGamma(2*config->nmarkers, config->nmarkers);
+    buildQGamma(&QGamma, p0, p1, dSdV, config);
+
+    int idx;
+    for (int i=0; i<config->nmarkers; i++) {
+        for (int j=0; j<2; j++) {
+            idx = 2*i+j;
+
+            dv->coeffRef(idx) = 0;
+            for (int k=0; k<config->nmarkers; k++) {
+                dv->coeffRef(idx) += config->nu / config->m * p1[k].weight * QGamma(idx, k);
+            }
+        }
+    }
+
+
+}
 
 /**
  * @brief Compute 1 / (m*w_p) * dS / dvp
