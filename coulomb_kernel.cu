@@ -62,8 +62,9 @@ namespace Kernel {
                     Q(&qTmp, (p1[i].z + p0[i].z - p1[j].z - p0[j].z) / 2);
                     gammaTmp(0) = dSdV[2*i] - dSdV[2*j];
                     gammaTmp(1) = dSdV[2*i+1] - dSdV[2*j+1];
-                    ret[2*i] += config->nu / config->m * p1[j].weight * (qTmp(0,0)*gammaTmp(0)+qTmp(0,1)*gammaTmp(1));
-                    ret[2*i+1] += config->nu / config->m * p1[j].weight * (qTmp(1,0)*gammaTmp(0)+qTmp(1,1)*gammaTmp(1));
+                    gammaTmp = qTmp*gammaTmp;
+                    ret[2*i] += config->nu / config->m * p1[j].weight * gammaTmp(0);
+                    ret[2*i+1] += config->nu / config->m * p1[j].weight * gammaTmp(1);
                 }
             }
         }

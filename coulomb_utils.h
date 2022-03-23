@@ -8,8 +8,14 @@ typedef double real;  /**< Double precision float   */
 #include <iomanip>
 #include <limits>
 #include <stdio.h>
-#include <eigen3/Eigen/Dense>
-// #include "Eigen/Dense"
+
+#ifdef INTELLISENSE
+#include <eigen3/Eigen/Dense> // global installation
+#else
+#include "Eigen/Dense" // local installation in same folder. FIX this
+// Aalto workstation has Eigen as module but it's slightly outdated and has compile warnings
+// CSC has no Eigen module at all
+#endif
 
 using namespace std;
 using namespace Eigen;
