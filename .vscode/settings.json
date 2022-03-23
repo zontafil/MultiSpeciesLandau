@@ -26,6 +26,9 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "version": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp"
     }
 }

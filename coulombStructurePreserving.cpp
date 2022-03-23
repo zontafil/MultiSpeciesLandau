@@ -6,21 +6,18 @@ Config buildConfig() {
     Config config;
 
     double L = 10;
-    int MARKERS_PER_DIM = 10;
+    int MARKERS_PER_DIM = 60;
 
     // peaks of the double Maxwellian
-    Vector2d u1, u2;
-    u1 << -2, 1;
-    u2 << 0, -1;
-    config.u1 = u1;
-    config.u2 = u2;
+    config.u1 = Vector2d(-2, 1);
+    config.u2 = Vector2d(0, -1);
 
     config.dx = 1E-4; // dx for finite difference derivative
-    // config.dt = 1./16.; // time step
-    config.dt = 1;
-    config.n_timesteps = 100; // number of timesteps
+    config.dt = 1/16.;
+    config.n_timesteps = 1; // number of timesteps
     config.newtonTolerance = 1E-14; // minimum target for error of eq. of motions
     config.useNewton = 0;
+    config.maxEOMIterations = 20;
     config.nu = 1;
     config.m = 1;
     config.h = 2.*L/MARKERS_PER_DIM;
@@ -31,7 +28,7 @@ Config buildConfig() {
     config.ymax = L;
     config.nx = MARKERS_PER_DIM;
     config.ny = MARKERS_PER_DIM;
-    config.recordAtStep = config.n_timesteps - 1;
+    config.recordAtStep = max(config.n_timesteps - 1, 1);
 
     // double kHermite[5] = {-2.020183, -0.958572, 0.000000, 0.958572, 2.020183};
     // double wHermite[5] = {0.019953, 0.393619, 0.945309, 0.393619, 0.019953};
@@ -44,6 +41,7 @@ Config buildConfig() {
     copy(wHermite, wHermite+config.nHermite, config.wHermite);
 
     config.nmarkers = config.nx * config.ny;
+    config.cudaThreadsPerBlock = 1024;
 
     return config;
 }
@@ -74,9 +72,14 @@ int main() {
 
         // precompute entropy gradient
         Kernel::computedSdv(&dSdV, p0, &config);
+        if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
+            cout << "==== dSdV" << endl;
+            cout << dSdV << endl;
+            cout << "==== dSdV end" << endl;
+        }
 
         // fixed point newton iterations
-        for (int j=0; j<20; j++) {
+        for (int j=0; j<config.maxEOMIterations; j++) {
             if (config.useNewton) {
                 if (pushForward_iteration(p0, p1, &dSdV, &config)) {
                     break;

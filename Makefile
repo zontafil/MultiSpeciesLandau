@@ -23,6 +23,7 @@ ifeq ($(CUDA), 1)
 	CC=nvcc
 	CFLAGS+=--expt-relaxed-constexpr
 	DEFINES+=-DCUDA=1
+	DEFINES+=-DEIGEN_MAX_STATIC_ALIGN_BYTES=16
 else
 	CC=g++
 endif

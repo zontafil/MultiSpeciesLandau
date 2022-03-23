@@ -9,6 +9,7 @@ typedef double real;  /**< Double precision float   */
 #include <limits>
 #include <stdio.h>
 #include <eigen3/Eigen/Dense>
+// #include "Eigen/Dense"
 
 using namespace std;
 using namespace Eigen;
@@ -47,12 +48,14 @@ typedef struct {
     int n_timesteps;
     double newtonTolerance;
     int useNewton;
-    Vector2d u1;
-    Vector2d u2;
+    int maxEOMIterations;
     double* kHermite;
     double* wHermite;
     int nHermite;
     int recordAtStep;
+    int cudaThreadsPerBlock;
+    Vector2d u1;
+    Vector2d u2;
 } Config;
 
 typedef struct {

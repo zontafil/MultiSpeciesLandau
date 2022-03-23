@@ -2,11 +2,12 @@
     "configurations": [
         {
             "name": "Linux",
-            "defines": ["VERBOSE_LEVEL"],
+            "defines": ["VERBOSE_LEVEL", "CUDA", "INTELLISENSE", "__CUDACC__"],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++14",
-            "intelliSenseMode": "linux-clang-x64"
+            "intelliSenseMode": "linux-clang-x64",
+            "includePath": ["~/cudaInclude"]
         }
     ],
     "version": 4

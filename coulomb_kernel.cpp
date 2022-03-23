@@ -39,12 +39,6 @@ void computedSdv(
         ret->coeffRef(2*i_p1+i_x) += k * config->wHermite[i] * config->wHermite[j] * (1. + logsum);
     }
     (*ret) *= sqrt(2.*config->eps) / (config->m * CONST_PI * config->eps);
-
-    if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
-        cout << "==== dSdV" << endl;
-        cout << (*ret) << endl;
-        cout << "==== dSdV end" << endl;
-    }
 }
 
 }
