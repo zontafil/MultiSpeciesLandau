@@ -50,7 +50,7 @@ namespace Kernel {
         double* dSdV,
         Config* config
     ) {
-        Vector2d gammaTmp;
+        Vector2d gammaTmp, qGamma;
         Matrix2d qTmp;
 
         int i = blockIdx.x*config->cudaThreadsPerBlock + threadIdx.x;
@@ -63,13 +63,16 @@ namespace Kernel {
                     gammaTmp(0) = dSdV[2*i] - dSdV[2*j];
                     gammaTmp(1) = dSdV[2*i+1] - dSdV[2*j+1];
                     gammaTmp = qTmp*gammaTmp;
-                    ret[2*i] += config->nu / config->m * p1[j].weight * gammaTmp(0);
-                    ret[2*i+1] += config->nu / config->m * p1[j].weight * gammaTmp(1);
+                    ret[2*i] -= config->nu / config->m * p1[j].weight * gammaTmp(0);
+                    ret[2*i+1] -= config->nu / config->m * p1[j].weight * gammaTmp(1);
                 }
             }
         }
     }
 
+    /**
+     * @brief CUDA version of entropy gradient
+     */
     __global__ void cuda_dSdv(
         double* ret,
         Particle2d* p,
@@ -77,28 +80,29 @@ namespace Kernel {
     ) {
         int i_p1 = blockIdx.x*config->cudaThreadsPerBlock + threadIdx.x;
         if (i_p1 < config->nmarkers) {
-            double logsum, k;
-            for (int i_x = 0; i_x < 2; i_x++) {
-                ret[2*i_p1+i_x] = 0;
+            double logsum, dx, dy, kpx, kpy;
+            double SQRT2EPSM1 = 1./sqrt(2.*config->eps);
+            double PI2EPSM1 = 1./(CONST_2PI * config->eps);
+            ret[2*i_p1] = 0;
+            ret[2*i_p1+1] = 0;
                 for (int i=0; i<config->nHermite; i++)
                 for (int j=0; j<config->nHermite; j++) {
                     logsum = 0;
-                    for (int i_p2 = 0; i_p2<config->nmarkers; i_p2++) {
-                        logsum += p[i_p2].weight / (CONST_2PI*config->eps)* ( exp(
-                                    -pow(config->kHermite[i] + (p[i_p1].z[0] - p[i_p2].z[0])/ sqrt(2*config->eps), 2)
-                                    -pow(config->kHermite[j] + (p[i_p1].z[1] - p[i_p2].z[1])/ sqrt(2*config->eps), 2))
-                                );
+
+                    // TODO: Normalize z to SQRT2EPSM1 --> ~10% performance boost
+                    kpx = config->kHermite[i] + p[i_p1].z[0] * SQRT2EPSM1;
+                    kpy = config->kHermite[j] + p[i_p1].z[1] * SQRT2EPSM1;
+                    for (int i_p2 = config->nmarkers; i_p2>0; i_p2--) {
+                        dx = kpx - p[i_p2].z[0] * SQRT2EPSM1;
+                        dy = kpy - p[i_p2].z[1] * SQRT2EPSM1;
+                        logsum+=p[i_p2].weight* exp(-dx*dx - dy*dy);
                     }
-                    logsum = log(logsum);
-                    if (i_x == 0) {
-                        k = config->kHermite[i];
-                    } else {
-                        k = config->kHermite[j];
-                    }
-                    ret[2*i_p1+i_x] += k * config->wHermite[i] * config->wHermite[j] * (1. + logsum);
+                    logsum = config->wHermite[i]*config->wHermite[j] * (1. + log(logsum * PI2EPSM1));
+                    ret[2*i_p1] += logsum * config->kHermite[i];
+                    ret[2*i_p1+1] += logsum * config->kHermite[j];
                 }
-                ret[2*i_p1+i_x] *= sqrt(2.*config->eps) / (config->m * CONST_PI * config->eps);
-            }
+            ret[2*i_p1] *= sqrt(2.*config->eps) / (config->m * CONST_PI * config->eps);
+            ret[2*i_p1+1] *= sqrt(2.*config->eps) / (config->m * CONST_PI * config->eps);
         }
     }
 

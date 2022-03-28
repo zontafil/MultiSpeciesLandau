@@ -6,7 +6,7 @@ Config buildConfig() {
     Config config;
 
     double L = 10;
-    int MARKERS_PER_DIM = 60;
+    int MARKERS_PER_DIM = 7;
 
     // peaks of the double Maxwellian
     config.u1 = Vector2d(-2, 1);
@@ -17,7 +17,7 @@ Config buildConfig() {
     config.n_timesteps = 1; // number of timesteps
     config.newtonTolerance = 1E-14; // minimum target for error of eq. of motions
     config.useNewton = 0;
-    config.maxEOMIterations = 20;
+    config.maxEOMIterations = 1;
     config.nu = 1;
     config.m = 1;
     config.h = 2.*L/MARKERS_PER_DIM;
@@ -74,7 +74,9 @@ int main() {
         Kernel::computedSdv(&dSdV, p0, &config);
         if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
             cout << "==== dSdV" << endl;
-            cout << dSdV << endl;
+            for (int i=0; i<config.nmarkers; i++) {
+                printf("%e\t%e\n", dSdV(2*i), dSdV(2*i+1));
+            }
             cout << "==== dSdV end" << endl;
         }
 
@@ -165,7 +167,9 @@ int pushForward_dv(
     Kernel::f_eqmotion_dv(&f, p0, p1, dSdV, config);
     if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
         printf("=== dv\n");
-        cout << f << endl;
+        for (int i=0; i<config->nmarkers; i++) {
+            printf("%e\t%e\n", f(2*i), f(2*i+1));
+        }
         printf("=== dv end\n");
     }
 

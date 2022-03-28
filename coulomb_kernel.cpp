@@ -83,7 +83,7 @@ void f_eqmotion_dv(
 
             dv->coeffRef(idx) = 0;
             for (int k=0; k<config->nmarkers; k++) {
-                dv->coeffRef(idx) += config->nu / config->m * p1[k].weight * QGamma(idx, k);
+                dv->coeffRef(idx) -= config->nu / config->m * p1[k].weight * QGamma(idx, k);
             }
         }
     }
