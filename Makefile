@@ -3,7 +3,6 @@ CC=mpiCC
 CFLAGS=-lm
 DEPS = coulombStructurePreserving.h coulomb_kernel.h
 OBJ = coulomb_kernel.o
-OBJTEST = test.o
 
 ifdef SILLY
 	DEFINES+=-DVERBOSE_LEVEL=3
@@ -38,9 +37,6 @@ endif
 coulombStructurePreserving: coulombStructurePreserving.o $(OBJ)
 	$(info Using compiler ${CC})
 	$(CC) $(CFLAGS) -o $@ $^
-test: test.o
-	$(info Using compiler ${CC})
-	$(CC) $(CFLAGS) -o test $(OBJTEST)
 
 clean:
-	rm -f *.o coulombStructurePreserving test
+	rm -f *.o coulombStructurePreserving
