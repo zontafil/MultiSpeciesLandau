@@ -48,12 +48,15 @@ Config buildConfig() {
 
 int main() {
     Config config = buildConfig();
+    Particle2d* p_mesh = new Particle2d[config.nmarkers];
     Particle2d* p0 = new Particle2d[config.nmarkers];
     Particle2d* p1 = new Particle2d[config.nmarkers];
-    initMarkers(p1, &config);
+    initMarkers(p_mesh, &config);
+    copy(p_mesh, p_mesh+config.nmarkers, p1);
 
     // initial energy
     double E0 = K(p1, &config), E;
+    double f_mesh[config.nmarkers];
     Vector2d P0 = Momentum(p1, &config), P;
     VectorXd dSdV(2*config.nmarkers);
 
@@ -66,7 +69,7 @@ int main() {
 
     for (int t=0; t<config.n_timesteps; t++) {
 
-        print_out(VERBOSE_NORMAL, "\nTimestep: %d\n", t);
+        print_out(VERBOSE_NORMAL, "Timestep: %d\n", t);
 
         copy(p1, p1+config.nmarkers, p0);
 
@@ -95,6 +98,15 @@ int main() {
 
         // print system state and debug
         if (t%config.recordAtStep == 0) {
+
+            // build distribution at mesh nodes
+            mesh_distribution(f_mesh, p_mesh, p1, &config);
+            char filename[30];
+            snprintf (filename, sizeof filename, "step_C_%03d.txt", t);
+            FILE* fout = fopen(filename, "w+");
+            for (int i=0; i<config.nmarkers; i++) {
+                fprintf(fout, "%d %e %e %e\n", i, p_mesh[i].z[0], p_mesh[i].z[1], f_mesh[i]);
+            }
 
             E = K(p1, &config);
             print_out(VERBOSE_NORMAL, "Energy: %.15e Error: %.15e\n", E, (E-E0)/E0);
@@ -126,6 +138,31 @@ int main() {
  */
 double f(Vector2d v, Config* config) {
     return pow(config->h,2)/(4.*CONST_PI) * (exp(-(v-config->u1).squaredNorm()/2.) + exp(-(v-config->u2).squaredNorm()/2.));
+}
+
+/**
+ * @brief Build distribution of states at the mesh nodes
+ * 
+ * @param ret 
+ * @param p_mesh 
+ * @param p 
+ * @param config 
+ */
+void mesh_distribution(
+    double* ret,
+    Particle2d* p_mesh,
+    Particle2d* p,
+    Config* config
+) {
+    for (int i=0; i<config->nmarkers; i++) {
+        ret[i] = 0;
+        double CONST_2EPS_M1 = 1./(2.*config->eps);
+        double CONST_2PIEPS_M1 = 1./(CONST_2PI*config->eps);
+        for (int j=0; j<config->nmarkers; j++) {
+            ret[i] += exp(-(p_mesh[i].z - p[j].z).squaredNorm()*CONST_2EPS_M1)*p[j].weight;
+        }
+        ret[i] *= CONST_2PIEPS_M1;
+    }
 }
 
 /**
