@@ -12,9 +12,10 @@ typedef double real;  /**< Double precision float   */
 #ifdef INTELLISENSE
 #include <eigen3/Eigen/Dense> // global installation
 #else
-#include "Eigen/Dense" // local installation in same folder. FIX this
+// #include "Eigen/Dense" // local installation in same folder. FIX this
 // Aalto workstation has Eigen as module but it's slightly outdated and has compile warnings
 // CSC has no Eigen module at all
+#include <eigen3/Eigen/Dense> // global installation
 #endif
 
 using namespace std;
@@ -37,36 +38,38 @@ enum {
  */
 #define print_out(v,...) { if(VERBOSE_LEVEL >= (v)) printf(__VA_ARGS__); }
 
-typedef struct {
-    double xmin;
-    double xmax;
-    int nx;
-    double ymin;
-    double ymax;
-    int ny;
-    int nmarkers;
-    double dt;
-    double dx;
-    double nu;
-    double m;
-    double h;
-    double eps;
-    int n_timesteps;
-    double newtonTolerance;
-    int useNewton;
-    int maxEOMIterations;
-    double* kHermite;
-    double* wHermite;
-    int nHermite;
-    int recordAtStep;
-    int cudaThreadsPerBlock;
-    Vector2d u1;
-    Vector2d u2;
-} Config;
+namespace Coulomb {
+    typedef struct {
+        double weight;
+        Vector2d z;
+    } Particle2d;
 
-typedef struct {
-    double weight;
-    Vector2d z;
-} Particle2d;
+    typedef struct {
+        double xmin;
+        double xmax;
+        int nx;
+        double ymin;
+        double ymax;
+        int ny;
+        int nmarkers;
+        double dt;
+        double dx;
+        double nu;
+        double m;
+        double h;
+        double eps;
+        int n_timesteps;
+        double newtonTolerance;
+        int useNewton;
+        int maxEOMIterations;
+        double* kHermite;
+        double* wHermite;
+        int nHermite;
+        int recordAtStep;
+        int cudaThreadsPerBlock;
+        Vector2d u1;
+        Vector2d u2;
+    } Config;
+}
 
 #endif

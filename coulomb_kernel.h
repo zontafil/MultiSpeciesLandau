@@ -5,6 +5,8 @@
 #include "crt/device_functions.h"
 #endif
 
+using namespace Coulomb;
+
 namespace Kernel {
     void computedSdv(
         VectorXd* ret,
