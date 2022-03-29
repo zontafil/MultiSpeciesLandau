@@ -92,7 +92,7 @@ namespace Kernel {
                     // TODO: Normalize z to SQRT2EPSM1 --> ~10% performance boost
                     kpx = config->kHermite[i] + p[i_p1].z[0] * SQRT2EPSM1;
                     kpy = config->kHermite[j] + p[i_p1].z[1] * SQRT2EPSM1;
-                    for (int i_p2 = config->nmarkers; i_p2>0; i_p2--) {
+                    for (int i_p2 = 0; i_p2<config->nmarkers; i_p2++) {
                         dx = kpx - p[i_p2].z[0] * SQRT2EPSM1;
                         dy = kpy - p[i_p2].z[1] * SQRT2EPSM1;
                         logsum+=p[i_p2].weight* exp(-dx*dx - dy*dy);
