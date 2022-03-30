@@ -1,6 +1,6 @@
 *.out
 *.o
-coulombStructurePreserving
+coulomb
 __pycache__/
 *.png
 main.cpp

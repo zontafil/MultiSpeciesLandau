@@ -8,7 +8,7 @@
             "name": "main",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/coulombStructurePreserving",
+            "program": "${workspaceRoot}/coulomb",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
