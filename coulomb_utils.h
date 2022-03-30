@@ -12,10 +12,10 @@ typedef double real;  /**< Double precision float   */
 #ifdef INTELLISENSE
 #include <eigen3/Eigen/Dense> // global installation
 #else
-// #include "Eigen/Dense" // local installation in same folder. FIX this
+#include "Eigen/Dense" // local installation in same folder. FIX this
 // Aalto workstation has Eigen as module but it's slightly outdated and has compile warnings
 // CSC has no Eigen module at all
-#include <eigen3/Eigen/Dense> // global installation
+// #include <eigen3/Eigen/Dense> // global installation
 #endif
 
 using namespace std;
@@ -45,6 +45,13 @@ namespace Coulomb {
     } Particle2d;
 
     typedef struct {
+        int npeaks;
+        Vector2d* peaks;
+        double m;
+        double* nu;
+    } Specie;
+
+    typedef struct {
         double xmin;
         double xmax;
         int nx;
@@ -54,8 +61,6 @@ namespace Coulomb {
         int nmarkers;
         double dt;
         double dx;
-        double nu;
-        double m;
         double h;
         double eps;
         int n_timesteps;
@@ -67,8 +72,10 @@ namespace Coulomb {
         int nHermite;
         int recordAtStep;
         int cudaThreadsPerBlock;
-        Vector2d u1;
-        Vector2d u2;
+
+        int nspecies;
+        Specie* species;
+
     } Config;
 }
 
