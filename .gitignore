@@ -4,3 +4,4 @@ coulomb
 __pycache__/
 *.png
 main.cpp
+Eigen/
