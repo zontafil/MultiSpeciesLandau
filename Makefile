@@ -39,4 +39,4 @@ coulomb: main.o $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -f *.o coulomb
+	rm -f *.o coulomb out/*
