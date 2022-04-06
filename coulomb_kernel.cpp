@@ -68,27 +68,25 @@ void buildQGamma(
  */
 void f_eqmotion_dv(
     VectorXd* dv,
-    Particle2d* p0,
-    Particle2d* p1,
+    Particle2d** p0,
+    Particle2d** p1,
     VectorXd* dSdV,
     Config* config
 ) {
-    MatrixXd QGamma(2*config->nmarkers, config->nmarkers);
-    buildQGamma(&QGamma, p0, p1, dSdV, config);
+    // MatrixXd QGamma(2*config->nmarkers, config->nmarkers);
+    // buildQGamma(&QGamma, p0, p1, dSdV, config);
 
-    int idx;
-    for (int i=0; i<config->nmarkers; i++) {
-        for (int j=0; j<2; j++) {
-            idx = 2*i+j;
+    // int idx;
+    // for (int i=0; i<config->nmarkers; i++) {
+    //     for (int j=0; j<2; j++) {
+    //         idx = 2*i+j;
 
-            dv->coeffRef(idx) = 0;
-            for (int k=0; k<config->nmarkers; k++) {
-                dv->coeffRef(idx) -= config->nu / config->m * p1[k].weight * QGamma(idx, k);
-            }
-        }
-    }
-
-
+    //         dv->coeffRef(idx) = 0;
+    //         for (int k=0; k<config->nmarkers; k++) {
+    //             dv->coeffRef(idx) -= config->nu / config->m * p1[k].weight * QGamma(idx, k);
+    //         }
+    //     }
+    // }
 }
 
 /**
@@ -99,7 +97,7 @@ void f_eqmotion_dv(
  * @param config 
  */
 void computedSdv(
-    VectorXd** ret,
+    VectorXd* ret,
     Particle2d** p,
     Config* config
 ) {
