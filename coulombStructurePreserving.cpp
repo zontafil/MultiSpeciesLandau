@@ -241,15 +241,16 @@ int pushForward_dv(
             for (int j=0; j<2; j++) {
                 znew = p0[s][i].z[j] + config->dt * f[s](i*2+j);
                 dz = p1[s][i].z[j] - znew;
-                err += dz*dz;
+                err += abs(dz);
                 p1[s][i].z[j] = znew;
             }
         }
     }
+    err /= (config->nmarkers * config->nspecies);
 
-    print_out(VERBOSE_DEBUG, "Eq. of motions precision: %e\n", sqrt(err));
+    print_out(VERBOSE_DEBUG, "Eq. of motions precision: %e\n", err);
 
-    if (sqrt(err) < config->newtonTolerance) {
+    if (err < config->newtonTolerance) {
         return 1;
     }
 
