@@ -14,9 +14,9 @@ void Run(Config* config) {
     Particle2d** p0 = new Particle2d*[config->nspecies];
     Particle2d** p1 = new Particle2d*[config->nspecies];
     for (int i=0; i<config->nspecies; i++) {
-        p_mesh[i] = initMarkers(i, config);
-        p0[i] = initMarkers(i, config);
-        p1[i] = initMarkers(i, config);
+        p_mesh[i] = initMarkers(i, config, MESH);
+        p0[i] = initMarkers(i, config, config->distributionType);
+        p1[i] = initMarkers(i, config, config->distributionType);
     }
 
     // initial energy
@@ -193,14 +193,21 @@ double psi(Vector2d v, double eps) {
  * @param p 
  * @param config 
  */
-Particle2d* initMarkers(int specie, Config* config) {
+Particle2d* initMarkers(int specie, Config* config, DistributionType type) {
+    int nmarkers = config->nmarkers;
+    Particle2d* ret;
+    ret = new Particle2d[config->nmarkers];
     int idx;
-    Particle2d* ret = new Particle2d[config->nmarkers];
     for (int i = 0; i<config->ny; i++) {
         for (int j = 0; j<config->nx; j++) {
             idx = i*config->nx + j;
-            ret[idx].z[0] = double(j+0.5) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
-            ret[idx].z[1] = double(i+0.5) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
+            if (type == UNIFORM) {
+                ret[idx].z[0] = double(rand()) / RAND_MAX * (config->xmax - config->xmin) + config->xmin;
+                ret[idx].z[1] = double(rand()) / RAND_MAX * (config->ymax - config->ymin) + config->ymin;
+            } else if (type == MESH) {
+                ret[idx].z[0] = double(j+0.5) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
+                ret[idx].z[1] = double(i+0.5) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
+            }
             ret[idx].weight = f(ret[idx].z, specie, config);
         }
     }

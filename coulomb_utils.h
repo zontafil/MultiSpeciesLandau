@@ -51,6 +51,11 @@ namespace Coulomb {
         double* nu;
     } Specie;
 
+    typedef enum {
+        MESH,
+        UNIFORM
+    } DistributionType;
+
     typedef struct {
         double xmin;
         double xmax;
@@ -59,6 +64,7 @@ namespace Coulomb {
         double ymax;
         int ny;
         int nmarkers;
+        DistributionType distributionType;
         double dt;
         double dx;
         double h;

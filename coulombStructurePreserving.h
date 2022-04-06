@@ -5,7 +5,7 @@ namespace Coulomb {
 
     void Run(Config* config);
     double f(Vector2d v, int specie, Config* config);
-    Particle2d* initMarkers(int specie, Config* config);
+    Particle2d* initMarkers(int specie, Config* config, DistributionType type);
     double psi(Vector2d v, double eps);
     void mesh_distribution(
         double** ret,
