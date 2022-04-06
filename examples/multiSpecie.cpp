@@ -18,7 +18,6 @@ Coulomb::Config buildConfig() {
     config.xmax = L;
     config.ymin = -L;
     config.ymax = L;
-    config.distributionType = UNIFORM;
     config.nx = MARKERS_PER_DIM;
     config.ny = MARKERS_PER_DIM;
     // config.recordAtStep = max(config.n_timesteps - 1, 1);
@@ -27,16 +26,27 @@ Coulomb::Config buildConfig() {
     // initial peaks config
     Vector2d u1 = Vector2d(-2, 1);
     Vector2d u2 = Vector2d(0, -1);
-    config.nspecies = 1;
-    config.species = new Specie[config.nspecies];
+    config.nspecies = 2;
+    // config.species = new Specie[config.nspecies];
+    config.species = new Specie[2];
+
+    // SPECIE 1
     config.species[0].m = 1;
-    config.species[0].npeaks = 2;
-    config.species[0].peaks = new Vector2d[2];
+    config.species[0].npeaks = 1;
+    config.species[0].peaks = new Vector2d[1];
     config.species[0].peaks[0] = u1;
-    config.species[0].peaks[1] = u2;
     config.species[0].nu = new double[config.nspecies];
     config.species[0].nu[0] = 1;
-    
+    config.species[0].nu[1] = 1;
+
+    // SPECIE 2
+    config.species[1].m = 1;
+    config.species[1].npeaks = 1;
+    config.species[1].peaks = new Vector2d[1];
+    config.species[1].peaks[0] = u2;
+    config.species[1].nu = new double[config.nspecies];
+    config.species[1].nu[0] = 1;
+    config.species[1].nu[1] = 1;
     
     // double kHermite[5] = {-2.020183, -0.958572, 0.000000, 0.958572, 2.020183};
     // double wHermite[5] = {0.019953, 0.393619, 0.945309, 0.393619, 0.019953};
