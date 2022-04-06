@@ -34,4 +34,13 @@ namespace Coulomb {
     );
     double K(Particle2d** p, Config* config);
     Vector2d Momentum(Particle2d** p, Config* config);
+    void printState(
+        double** f_mesh,
+        Particle2d** p_mesh,
+        Particle2d** p1,
+        Config* config,
+        int t,
+        double E0,
+        Vector2d P0
+    );
 }

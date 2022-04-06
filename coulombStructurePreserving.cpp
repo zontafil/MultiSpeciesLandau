@@ -32,11 +32,6 @@ void Run(Config* config) {
     print_out(VERBOSE_NORMAL, "Markers: %d dT: %f\n", config->nmarkers, config->dt);
     print_out(VERBOSE_NORMAL, "Initial Energy: %e\n", E0);
     print_out(VERBOSE_NORMAL, "Initial Momentum: %e %e\n", P0[0], P0[1]);
-    for (int s=0; s<config->nspecies; s++) {
-        for (int i=0; i<config->nmarkers; i++) {
-            print_out(VERBOSE_DEBUG, "Init: Specie %d ID: %d Vx: %.15e Vy: %.15e W: %.15e\n", s, i, p1[s][i].z[0], p1[s][i].z[1], p1[s][i].weight);
-        }
-    }
 
     for (int t=0; t<config->n_timesteps; t++) {
 
@@ -44,6 +39,10 @@ void Run(Config* config) {
 
         for (int s=0; s<config->nspecies; s++) {
             copy(p1[s], p1[s]+config->nmarkers, p0[s]);
+        }
+
+        if (t%config->recordAtStep == 0) {
+            printState(f_mesh, p_mesh, p1, config, t, E0, P0);
         }
 
         // precompute entropy gradient
@@ -60,6 +59,7 @@ void Run(Config* config) {
 
         // fixed point newton iterations
         for (int j=0; j<config->maxEOMIterations; j++) {
+            print_out(VERBOSE_DEBUG, "Iteration %d ", j);
             if (config->useNewton) {
                 if (pushForward_iteration(p0, p1, dSdV, config)) {
                     break;
@@ -70,43 +70,64 @@ void Run(Config* config) {
                 }
             }
         }
-
-        // print system state and debug
-        if (t%config->recordAtStep == 0) {
-
-            // build distribution at mesh nodes
-            mesh_distribution(f_mesh, p_mesh, p1, config);
-            char filename[30];
-            snprintf (filename, sizeof filename, "step_C_%03d.txt", t);
-            FILE* fout = fopen(filename, "w+");
-            for (int s=0; s<config->nspecies; s++) {
-                for (int i=0; i<config->nmarkers; i++) {
-                    fprintf(fout, "%d %d %e %e %e\n", s, i, p_mesh[s][i].z[0], p_mesh[s][i].z[1], f_mesh[s][i]);
-                }
-            }
-
-            E = K(p1, config);
-            print_out(VERBOSE_NORMAL, "Energy: %.15e Error: %.15e\n", E, (E-E0)/E0);
-
-            P = Momentum(p1, config);
-            print_out(VERBOSE_NORMAL, "Momentum: %.15e %.15e\n", P[0], P[1]);
-            print_out(VERBOSE_NORMAL, "Momentum Error: %.15e %.15e\n", (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1]);
-
-            if (VERBOSE_LEVEL >= VERBOSE_DEBUG) {
-                for (int s=0; s<config->nspecies; s++) {
-                    for (int i=0; i<config->nmarkers; i++) {
-                        print_out(VERBOSE_DEBUG, "Specie %d ID: %d Vx: %.15e Vy: %.15e W: %.15e\n", s, i, p1[s][i].z[0], p1[s][i].z[1], p1[s][i].weight);
-                    }
-                }
-            }
-        }
     }
+
+    printState(f_mesh, p_mesh, p1, config, config->n_timesteps, E0, P0);
 
     for (int s=0; s<config->nspecies; s++) {
         free(p0[s]);
         free(p1[s]);
         free(p_mesh[s]);
         free(f_mesh[s]);
+    }
+}
+
+/**
+ * @brief Print the current state to screen and to file
+ * 
+ * @param f_mesh 
+ * @param p_mesh 
+ * @param p1 
+ * @param config 
+ * @param t 
+ * @param E0 
+ * @param P0 
+ */
+void printState(
+    double** f_mesh,
+    Particle2d** p_mesh,
+    Particle2d** p1,
+    Config* config,
+    int t,
+    double E0,
+    Vector2d P0
+) {
+    // build distribution at mesh nodes and print to file
+    mesh_distribution(f_mesh, p_mesh, p1, config);
+    char filename[30];
+    snprintf (filename, sizeof filename, "out/step_C_%03d.txt", t);
+    FILE* fout = fopen(filename, "w+");
+    fprintf(fout, "%d %d\n", config->nspecies, config->nmarkers);
+    for (int s=0; s<config->nspecies; s++) {
+        for (int i=0; i<config->nmarkers; i++) {
+            fprintf(fout, "%d %d %e %e %e\n", s, i, p_mesh[s][i].z[0], p_mesh[s][i].z[1], f_mesh[s][i]);
+        }
+    }
+
+    // print system state and debug info to screen
+    double E = K(p1, config);
+    print_out(VERBOSE_NORMAL, "Energy: %.15e Error: %.15e\n", E, (E-E0)/E0);
+
+    Vector2d P = Momentum(p1, config);
+    print_out(VERBOSE_NORMAL, "Momentum: %.15e %.15e\n", P[0], P[1]);
+    print_out(VERBOSE_NORMAL, "Momentum Error: %.15e %.15e\n", (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1]);
+
+    if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
+        for (int s=0; s<config->nspecies; s++) {
+            for (int i=0; i<config->nmarkers; i++) {
+                print_out(VERBOSE_SILLY, "Specie %d ID: %d Vx: %.15e Vy: %.15e W: %.15e\n", s, i, p1[s][i].z[0], p1[s][i].z[1], p1[s][i].weight);
+            }
+        }
     }
 }
 
