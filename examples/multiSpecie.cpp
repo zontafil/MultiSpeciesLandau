@@ -20,15 +20,14 @@ Coulomb::Config buildConfig() {
     config.ymax = L;
     config.nx = MARKERS_PER_DIM;
     config.ny = MARKERS_PER_DIM;
-    // config.recordAtStep = max(config.n_timesteps - 1, 1);
+    config.distributionType = MESH;
     config.recordAtStep = 1;
 
     // initial peaks config
     Vector2d u1 = Vector2d(-2, 1);
     Vector2d u2 = Vector2d(0, -1);
     config.nspecies = 2;
-    // config.species = new Specie[config.nspecies];
-    config.species = new Specie[2];
+    config.species = new Specie[config.nspecies];
 
     // SPECIE 1
     config.species[0].m = 1;
