@@ -207,6 +207,13 @@ Particle2d* initMarkers(int specie, Config* config, DistributionType type) {
             } else if (type == MESH) {
                 ret[idx].z[0] = double(j+0.5) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
                 ret[idx].z[1] = double(i+0.5) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
+            } else if (type == MESH_SHIFT) {
+                double shift = 0;
+                if (specie == 1) {
+                    shift = 0.5;
+                }
+                ret[idx].z[0] = double(j+shift) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
+                ret[idx].z[1] = double(i+shift) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
             }
             ret[idx].weight = f(ret[idx].z, specie, config);
         }

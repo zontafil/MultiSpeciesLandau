@@ -53,7 +53,8 @@ namespace Coulomb {
 
     typedef enum {
         MESH,
-        UNIFORM
+        UNIFORM,
+        MESH_SHIFT
     } DistributionType;
 
     typedef struct {
