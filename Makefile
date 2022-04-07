@@ -6,7 +6,7 @@ OBJ = coulomb_kernel.o coulombStructurePreserving.o
 
 ifdef SILLY
 	DEFINES+=-DVERBOSE_LEVEL=3
-else ifdef VERBOSE
+else ifeq ($(VERBOSE), 1)
 	DEFINES+=-DVERBOSE_LEVEL=2
 else
 	DEFINES+=-DVERBOSE_LEVEL=1
