@@ -21,6 +21,7 @@ Coulomb::Config buildConfig() {
     config.distributionType = UNIFORM;
     config.nx = MARKERS_PER_DIM;
     config.ny = MARKERS_PER_DIM;
+    config.distributionType = MESH;
     // config.recordAtStep = max(config.n_timesteps - 1, 1);
     config.recordAtStep = 1;
 
