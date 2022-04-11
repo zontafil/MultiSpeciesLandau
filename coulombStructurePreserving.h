@@ -19,7 +19,7 @@ namespace Coulomb {
         VectorXd* dSdV,
         Config* config
     );
-    int pushForward_iteration(
+    int pushForwardNewtonIteration(
         Particle2d** p0,
         Particle2d** p1,
         VectorXd* dSdV,

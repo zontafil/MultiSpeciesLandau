@@ -61,7 +61,7 @@ void Run(Config* config) {
         for (int j=0; j<config->maxEOMIterations; j++) {
             print_out(VERBOSE_DEBUG, "Iteration %d ", j);
             if (config->useNewton) {
-                if (pushForward_iteration(p0, p1, dSdV, config)) {
+                if (pushForwardNewtonIteration(p0, p1, dSdV, config)) {
                     break;
                 }
             } else {
@@ -277,7 +277,7 @@ int pushForward_dv(
  * @param config 
  * @return int 1 if the equations of motion norm is below minimum tolerance
  */
-int pushForward_iteration(
+int pushForwardNewtonIteration(
     Particle2d** p0,
     Particle2d** p1,
     VectorXd* dSdV,
