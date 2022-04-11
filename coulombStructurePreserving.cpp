@@ -214,6 +214,11 @@ Particle2d* initMarkers(int specie, Config* config, DistributionType type) {
                 }
                 ret[idx].z[0] = double(j+shift) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
                 ret[idx].z[1] = double(i+shift) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
+            } else if (type == MESH_PEAK_CENTERED) {
+                double dx = 0.1;
+                Vector2d peak = config->species[specie].peaks[0];
+                ret[idx].z[0] = double(j+0.5) / (config->nx) * (config->xmax-config->xmin) + peak(0) - dx/2;
+                ret[idx].z[1] = double(i+0.5) / (config->ny) * (config->ymax-config->ymin) + peak(1) - dx/2;
             }
             ret[idx].weight = f(ret[idx].z, specie, config);
         }
