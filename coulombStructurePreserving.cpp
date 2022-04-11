@@ -298,7 +298,7 @@ int pushForward_iteration(
         fnorm += f[s].squaredNorm();
         fmax = max(f->maxCoeff(), fmax);
     }
-    fnorm = sqrt(fnorm);
+    fnorm = sqrt(fnorm) / config->nspecies / config->nmarkers;
     print_out(VERBOSE_DEBUG, "Eq. of motions precision: %e max: %e\n", fnorm, fmax);
     if (fnorm < config->newtonTolerance) {
         return 1;
