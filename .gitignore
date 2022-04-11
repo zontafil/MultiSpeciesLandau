@@ -7,3 +7,7 @@ main.cpp
 Eigen/
 out/*
 main.py
+bin
+lib
+share
+pyvenv.cfg
