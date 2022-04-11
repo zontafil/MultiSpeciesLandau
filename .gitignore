@@ -6,3 +6,4 @@ __pycache__/
 main.cpp
 Eigen/
 out/*
+main.py
