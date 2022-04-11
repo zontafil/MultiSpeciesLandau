@@ -5,3 +5,4 @@ __pycache__/
 *.png
 main.cpp
 Eigen/
+out/*

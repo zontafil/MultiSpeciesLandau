@@ -13,21 +13,25 @@ for filename in files:
     lines = file.readlines()
     for i in range(1, len(lines)):
         fmax = max(fmax, float(lines[i].strip().split(" ")[4]))
-for filename in files:
-    print(filename)
+for file_i, filename in enumerate(files):
     matches = re.findall(r"step_C_(\d+)\.txt", filename)
     t = int(matches[0])
     file = open(filename, "r")
     lines = file.readlines()
     n = int(math.sqrt(float(lines[0].strip().split(" ")[1])))
     nspecies = int(lines[0].strip().split(" ")[0])
-    print("nspecies {}".format(nspecies))
-    print("n {}".format(n))
     idx = np.zeros([nspecies, n*n])
     vx = np.zeros([nspecies, n*n])
     vy = np.zeros([nspecies, n*n])
     specie = np.zeros([nspecies, n*n])
     f = np.zeros([nspecies, n*n])
+
+    if file_i == 0:
+        print("nspecies {}".format(nspecies))
+        print("n {}".format(n))
+    if file_i % 10 == 0:
+        print(filename)
+
     for i in range(1, len(lines)):
         line = lines[i]
         line_s = line.strip().split(" ")
@@ -56,7 +60,7 @@ for filename in glob.glob("./out/plot_C*.png"):
     img_array.append(img)
 
 print(size)
-out = cv2.VideoWriter('./out/project.avi',cv2.VideoWriter_fourcc(*'DIVX'), 30, size)
+out = cv2.VideoWriter('./out/out.avi',cv2.VideoWriter_fourcc(*'DIVX'), 30, size)
 
 for i in range(len(img_array)):
     out.write(img_array[i])
