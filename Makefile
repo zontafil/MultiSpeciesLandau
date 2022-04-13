@@ -39,4 +39,6 @@ coulomb: main.o $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -f *.o coulomb out/*
+	rm -f *.o coulomb out/*.txt
+	rm -f *.o coulomb out/*.png
+	rm -f *.o coulomb out/data/*
