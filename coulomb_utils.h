@@ -49,6 +49,7 @@ namespace Coulomb {
         Vector2d* peaks;
         double m;
         double* nu;
+        char name[20];
     } Specie;
 
     typedef enum {

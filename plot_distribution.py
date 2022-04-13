@@ -8,31 +8,60 @@ import cv2
 files = glob.glob("./out/step_C*.txt")
 files.sort()
 fmax = 0
+nspecies = 0
 for filename in files:
     file = open(filename, "r")
     lines = file.readlines()
-    for i in range(1, len(lines)):
+    nspecies = int(lines[0].strip().split(" ")[0])
+    for i in range(2+nspecies, len(lines)):
         fmax = max(fmax, float(lines[i].strip().split(" ")[4]))
+
+E = np.zeros(len(files))
+Eerr = np.zeros(len(files))
+P = np.zeros((len(files), 2))
+Perr = np.zeros((len(files), 2))
+times = np.zeros(len(files))
+Especies = np.zeros((nspecies, len(files)))
+Pspecies = np.zeros((nspecies, 2, len(files)))
+specieNames = []
+
 for file_i, filename in enumerate(files):
     matches = re.findall(r"step_C_(\d+)\.txt", filename)
     t = int(matches[0])
     file = open(filename, "r")
     lines = file.readlines()
     n = int(math.sqrt(float(lines[0].strip().split(" ")[1])))
-    nspecies = int(lines[0].strip().split(" ")[0])
     idx = np.zeros([nspecies, n*n])
     vx = np.zeros([nspecies, n*n])
     vy = np.zeros([nspecies, n*n])
     specie = np.zeros([nspecies, n*n])
     f = np.zeros([nspecies, n*n])
 
+    # store Energy and momentum
+    line = lines[1].strip().split(" ")
+    E[file_i] = float(line[0])
+    Eerr[file_i] = float(line[1])
+    P[file_i,0] = float(line[2])
+    P[file_i,1] = float(line[3])
+    Perr[file_i,0] = float(line[4])
+    Perr[file_i,1] = float(line[5])
+    times[file_i] = t
+    for s in range(nspecies):
+        line = lines[2+s].strip().split(" ")
+        Especies[s, file_i] = float(line[0])
+        Pspecies[s, 0, file_i] = float(line[1])
+        Pspecies[s, 1, file_i] = float(line[2])
+        specieNames.append(line[3])
+
+    # debug print
     if file_i == 0:
         print("nspecies {}".format(nspecies))
         print("n {}".format(n))
     if file_i % 10 == 0:
         print(filename)
 
-    for i in range(1, len(lines)):
+    # record distribution
+    for i in range(2+nspecies, len(lines)):
         line = lines[i]
         line_s = line.strip().split(" ")
         specie = int(line_s[0])
@@ -44,12 +73,31 @@ for file_i, filename in enumerate(files):
     #plot distribution to file
     plt.cla()
 
+    # plot distribution for current time step
     colourMaps = ["inferno", "viridis", "summer"]
     for i in range(nspecies):
         plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), 20, vmax=fmax, alpha=0.7, cmap=colourMaps[i])
     plt.draw()
     imgname = 'out/plot_C_' + str(t+1).zfill(3) + '.png'
     plt.savefig(imgname)
+
+# plot system momentum and energy
+plt.clf()
+plt.scatter(times, Eerr)
+plt.plot(times, Eerr)
+plt.xlabel("Time")
+plt.ylabel("Energy Error")
+plt.savefig("out/EnergyError.png")
+
+# plot single species momentum and energy
+plt.clf()
+for s in range(0, nspecies):
+    plt.scatter(times, Especies[s], label=specieNames[s], s=0.5)
+    plt.plot(times, Especies[s])
+    plt.legend()
+plt.xlabel("Time")
+plt.ylabel("Energy")
+plt.savefig("out/EnergySpecies.png")
 
 img_array = []
 size = (0,0)

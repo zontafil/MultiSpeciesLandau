@@ -105,14 +105,8 @@ void printState(
     // build distribution at mesh nodes and print to file
     mesh_distribution(f_mesh, p_mesh, p1, config);
     char filename[30];
-    snprintf (filename, sizeof filename, "out/step_C_%03d.txt", t);
+    snprintf (filename, sizeof filename, "out/step_C_%05d.txt", t);
     FILE* fout = fopen(filename, "w+");
-    fprintf(fout, "%d %d\n", config->nspecies, config->nmarkers);
-    for (int s=0; s<config->nspecies; s++) {
-        for (int i=0; i<config->nmarkers; i++) {
-            fprintf(fout, "%d %d %e %e %e\n", s, i, p_mesh[s][i].z[0], p_mesh[s][i].z[1], f_mesh[s][i]);
-        }
-    }
 
     // print system state and debug info to screen
     double E = K(p1, config);
@@ -121,6 +115,20 @@ void printState(
     Vector2d P = Momentum(p1, config);
     print_out(VERBOSE_NORMAL, "Momentum: %.15e %.15e\n", P[0], P[1]);
     print_out(VERBOSE_NORMAL, "Momentum Error: %.15e %.15e\n", (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1]);
+
+    fprintf(fout, "%d %d\n", config->nspecies, config->nmarkers);
+    fprintf(fout, "%e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1]);
+    for (int s=0; s<config->nspecies; s++) {
+        E = Kspecie(p1, s, config);
+        P = MomentumSpecie(p1, s, config);
+        fprintf(fout, "%e %e %e %s\n", E, P[0], P[1], config->species[s].name);
+    }
+    for (int s=0; s<config->nspecies; s++) {
+        for (int i=0; i<config->nmarkers; i++) {
+            fprintf(fout, "%d %d %e %e %e\n", s, i, p_mesh[s][i].z[0], p_mesh[s][i].z[1], f_mesh[s][i]);
+        }
+    }
+
 
     if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
         for (int s=0; s<config->nspecies; s++) {
@@ -368,6 +376,22 @@ void f_eqmotion(
 }
 
 /**
+ * @brief Compute the kinetic energy of a specie
+ * 
+ * @param p 
+ * @param s index of the specie
+ * @param config 
+ * @return double 
+ */
+double Kspecie(Particle2d** p, int s, Config* config) {
+    double ret = 0;
+    for (int i = 0; i<config->nmarkers; i++) {
+        ret += p[s][i].weight * config->species[s].m * 0.5 * p[s][i].z.squaredNorm();
+    }
+    return ret;
+}
+
+/**
  * @brief Compute the kinetic energy of the system
  * 
  * @param p 
@@ -377,9 +401,23 @@ void f_eqmotion(
 double K(Particle2d** p, Config* config) {
     double ret = 0;
     for (int s=0; s<config->nspecies; s++) {
-        for (int i = 0; i<config->nmarkers; i++) {
-            ret += p[s][i].weight * config->species[s].m * 0.5 * p[s][i].z.squaredNorm();
-        }
+        ret += Kspecie(p, s, config);
+    }
+    return ret;
+}
+
+/**
+ * @brief Compute momentum of a specie
+ * 
+ * @param p 
+ * @param s 
+ * @param config 
+ * @return Vector2d 
+ */
+Vector2d MomentumSpecie(Particle2d** p, int s, Config* config) {
+    Vector2d ret(0,0);
+    for (int i=0; i<config->nmarkers; i++) {
+        ret += p[s][i].weight * config->species[s].m * p[s][i].z;
     }
     return ret;
 }
@@ -394,9 +432,7 @@ double K(Particle2d** p, Config* config) {
 Vector2d Momentum(Particle2d** p, Config* config) {
     Vector2d ret(0,0);
     for (int s=0; s<config->nspecies; s++) {
-        for (int i=0; i<config->nmarkers; i++) {
-            ret += p[s][i].weight * config->species[s].m * p[s][i].z;
-        }
+        ret += MomentumSpecie(p, s, config);
     }
     return ret;
 }
