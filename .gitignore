@@ -2,7 +2,7 @@
 *.o
 coulomb
 __pycache__/
-*.png
+out/*.png
 main.cpp
 Eigen/
 out/*
