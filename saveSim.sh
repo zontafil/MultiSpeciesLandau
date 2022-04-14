@@ -12,3 +12,5 @@ cp main.cpp examples/$OUTFILE.cpp
 cp out/out.avi plots/$OUTFILE.avi
 cp out/EnergySpecies.png plots/${OUTFILE}_Energy.png
 cp out/EnergyError.png plots/${OUTFILE}_EnergySpecies.png
+cp out/minimumdist.png plots/${OUTFILE}_minimumdist.png
+cp out/P.png plots/${OUTFILE}_P.png

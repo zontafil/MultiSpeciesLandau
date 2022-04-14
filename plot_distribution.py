@@ -5,7 +5,7 @@ import re
 import math
 import cv2
 
-files = glob.glob("./out/step_C*.txt")
+files = glob.glob("./out/data/step_C*.txt")
 files.sort()
 fmax = 0
 nspecies = 0
@@ -18,7 +18,9 @@ for filename in files:
 
 E = np.zeros(len(files))
 Eerr = np.zeros(len(files))
+distmin = np.zeros(len(files))
 P = np.zeros((len(files), 2))
+Pnorm = np.zeros(len(files))
 Perr = np.zeros((len(files), 2))
 times = np.zeros(len(files))
 Especies = np.zeros((nspecies, len(files)))
@@ -43,8 +45,10 @@ for file_i, filename in enumerate(files):
     Eerr[file_i] = float(line[1])
     P[file_i,0] = float(line[2])
     P[file_i,1] = float(line[3])
+    Pnorm[file_i] = np.sqrt(float(line[3])**2 + float(line[2])**2)
     Perr[file_i,0] = float(line[4])
     Perr[file_i,1] = float(line[5])
+    distmin[file_i] = float(line[6])
     times[file_i] = t
     for s in range(nspecies):
         line = lines[2+s].strip().split(" ")
@@ -78,7 +82,7 @@ for file_i, filename in enumerate(files):
     for i in range(nspecies):
         plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), 20, vmax=fmax, alpha=0.7, cmap=colourMaps[i])
     plt.draw()
-    imgname = 'out/plot_C_' + str(t+1).zfill(3) + '.png'
+    imgname = 'out/data/plot_C_' + str(t+1).zfill(3) + '.png'
     plt.savefig(imgname)
 
 # plot system momentum and energy
@@ -88,6 +92,20 @@ plt.plot(times, Eerr)
 plt.xlabel("Time")
 plt.ylabel("Energy Error")
 plt.savefig("out/EnergyError.png")
+
+plt.clf()
+plt.scatter(times, distmin, s=0.5)
+plt.plot(times, distmin)
+plt.xlabel("Time")
+plt.ylabel("Minimum velocity distance")
+plt.savefig("out/minimumdist.png")
+
+plt.clf()
+plt.scatter(times, Pnorm, s=0.5)
+plt.plot(times, Pnorm)
+plt.xlabel("Time")
+plt.ylabel("|P|")
+plt.savefig("out/P.png")
 
 # plot single species momentum and energy
 plt.clf()
@@ -101,7 +119,7 @@ plt.savefig("out/EnergySpecies.png")
 
 img_array = []
 size = (0,0)
-for filename in glob.glob("./out/plot_C*.png"):
+for filename in glob.glob("./out/data/plot_C*.png"):
     img = cv2.imread(filename)
     height, width, layers = img.shape
     size = (width,height)

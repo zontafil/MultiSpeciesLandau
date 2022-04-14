@@ -105,7 +105,7 @@ void printState(
     // build distribution at mesh nodes and print to file
     mesh_distribution(f_mesh, p_mesh, p1, config);
     char filename[30];
-    snprintf (filename, sizeof filename, "out/step_C_%05d.txt", t);
+    snprintf (filename, sizeof filename, "out/data/step_C_%05d.txt", t);
     FILE* fout = fopen(filename, "w+");
 
     // print system state and debug info to screen
@@ -116,8 +116,18 @@ void printState(
     print_out(VERBOSE_NORMAL, "Momentum: %.15e %.15e\n", P[0], P[1]);
     print_out(VERBOSE_NORMAL, "Momentum Error: %.15e %.15e\n", (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1]);
 
+    double distmin = 1000000;
+    for (int s1=0; s1<config->nspecies; s1++)
+    for (int i1=0; i1<config->nmarkers; i1++)
+    for (int s2=0; s2<config->nspecies; s2++)
+    for (int i2=0; i2<config->nmarkers; i2++) {
+        if (i1!=i2 || s1!=s2) {
+            distmin = min(distmin, (p1[s1][i1].z - p1[s2][i2].z).norm());
+        }
+    }
+
     fprintf(fout, "%d %d\n", config->nspecies, config->nmarkers);
-    fprintf(fout, "%e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1]);
+    fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1], distmin);
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);
         P = MomentumSpecie(p1, s, config);
