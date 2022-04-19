@@ -6,6 +6,8 @@ import math
 import cv2
 import os
 
+plt.figure(figsize=(6,6))
+
 def createDir(path):
     try: 
         os.mkdir(path)
@@ -73,7 +75,7 @@ for file_i, filename in enumerate(files):
     if file_i == 0:
         print("nspecies {}".format(nspecies))
         print("n {}".format(n))
-    if file_i % 10 == 0:
+    if file_i % 20 == 0:
         print(filename)
 
     # record distribution
@@ -92,9 +94,10 @@ for file_i, filename in enumerate(files):
     # plot distribution for current time step
     colourMaps = ["inferno", "viridis", "summer"]
     for i in range(nspecies):
-        plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), 20, vmax=fmax, alpha=0.7, cmap=colourMaps[i])
+        plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), 10, vmax=fmax, alpha=0.7, cmap=colourMaps[i])
+    imgname = 'out/data/plot_C_' + str(t+1).zfill(6) + '.png'
+    plt.axis('equal')
     plt.draw()
-    imgname = 'out/data/plot_C_' + str(t+1).zfill(3) + '.png'
     plt.savefig(imgname)
 
 createDir("./plots/eps")
