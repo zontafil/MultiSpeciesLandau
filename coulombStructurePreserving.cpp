@@ -131,7 +131,8 @@ void printState(
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);
         P = MomentumSpecie(p1, s, config);
-        fprintf(fout, "%e %e %e %s\n", E, P[0], P[1], config->species[s].name);
+        double T = TemperatureSpecie(p1, s, config);
+        fprintf(fout, "%e %e %e %e %s\n", E, P[0], P[1], T, config->species[s].name);
     }
     for (int s=0; s<config->nspecies; s++) {
         for (int i=0; i<config->nmarkers; i++) {
@@ -147,6 +148,8 @@ void printState(
             }
         }
     }
+
+    fclose(fout);
 }
 
 /**
@@ -383,6 +386,42 @@ void f_eqmotion(
         }
         printf("=== fcoeff end\n");
     }
+}
+
+/**
+ * @brief Compute specie temperature: 0.5*m*<(v-<v>)^2>
+ * 
+ * @param p 
+ * @param s 
+ * @param config 
+ * @return double 
+ */
+double TemperatureSpecie(
+    Particle2d** p,
+    int s,
+    Config* config
+) {
+    double T = 0;
+    Vector2d V(0,0);
+
+    // compute density, a.k.a. integral of f over velocity
+    double rho = 0;
+    for (int i=0; i<config->nmarkers; i++) {
+        rho += p[s][i].weight;
+    }
+
+    // compute <v>
+    for (int i=0; i<config->nmarkers; i++) {
+        V += p[s][i].weight * p[s][i].z;
+    }
+    V /= rho;
+
+    // compute Energy
+    for (int i=0; i<config->nmarkers; i++) {
+        T += p[s][i].weight * (p[s][i].z - V).squaredNorm();
+    }
+    T *= 0.5 * config->species[s].m / rho;
+    return T;
 }
 
 /**

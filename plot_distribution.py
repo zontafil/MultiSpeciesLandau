@@ -4,6 +4,14 @@ import glob
 import re
 import math
 import cv2
+import os
+
+def createDir(path):
+    try: 
+        os.mkdir(path)
+    except OSError as error:
+        pass
+
 
 files = glob.glob("./out/data/step_C*.txt")
 files.sort()
@@ -21,9 +29,11 @@ Eerr = np.zeros(len(files))
 distmin = np.zeros(len(files))
 P = np.zeros((len(files), 2))
 Pnorm = np.zeros(len(files))
+PSpeciesNorm = np.zeros((nspecies, len(files)))
 Perr = np.zeros((len(files), 2))
 times = np.zeros(len(files))
 Especies = np.zeros((nspecies, len(files)))
+Tspecies = np.zeros((nspecies, len(files)))
 Pspecies = np.zeros((nspecies, 2, len(files)))
 specieNames = []
 
@@ -55,7 +65,9 @@ for file_i, filename in enumerate(files):
         Especies[s, file_i] = float(line[0])
         Pspecies[s, 0, file_i] = float(line[1])
         Pspecies[s, 1, file_i] = float(line[2])
-        specieNames.append(line[3])
+        PSpeciesNorm[s, file_i] = np.sqrt(Pspecies[s,0,file_i]**2 + Pspecies[s,1,file_i]**2)
+        Tspecies[s, file_i] = float(line[3])
+        specieNames.append(line[4])
 
     # debug print
     if file_i == 0:
@@ -85,12 +97,16 @@ for file_i, filename in enumerate(files):
     imgname = 'out/data/plot_C_' + str(t+1).zfill(3) + '.png'
     plt.savefig(imgname)
 
+createDir("./plots/eps")
+createDir("./plots/png")
+
 # plot system momentum and energy
 plt.clf()
-plt.scatter(times, Eerr)
+plt.scatter(times, Eerr, s=0.5)
 plt.plot(times, Eerr)
 plt.xlabel("Time")
 plt.ylabel("Energy Error")
+plt.savefig("out/EnergyError.eps")
 plt.savefig("out/EnergyError.png")
 
 plt.clf()
@@ -98,6 +114,7 @@ plt.scatter(times, distmin, s=0.5)
 plt.plot(times, distmin)
 plt.xlabel("Time")
 plt.ylabel("Minimum velocity distance")
+plt.savefig("out/minimumdist.eps")
 plt.savefig("out/minimumdist.png")
 
 plt.clf()
@@ -105,6 +122,7 @@ plt.scatter(times, Pnorm, s=0.5)
 plt.plot(times, Pnorm)
 plt.xlabel("Time")
 plt.ylabel("|P|")
+plt.savefig("out/P.eps")
 plt.savefig("out/P.png")
 
 # plot single species momentum and energy
@@ -115,7 +133,30 @@ for s in range(0, nspecies):
     plt.legend()
 plt.xlabel("Time")
 plt.ylabel("Energy")
+plt.savefig("out/EnergySpecies.eps")
 plt.savefig("out/EnergySpecies.png")
+
+# plot single species temeperature
+plt.clf()
+for s in range(0, nspecies):
+    plt.scatter(times, PSpeciesNorm[s], label=specieNames[s], s=0.5)
+    plt.plot(times, PSpeciesNorm[s])
+    plt.legend()
+plt.xlabel("Time")
+plt.ylabel("|P|")
+plt.savefig("out/PspeciesNorm.eps")
+plt.savefig("out/PspeciesNorm.png")
+
+# plot single species temeperature
+plt.clf()
+for s in range(0, nspecies):
+    plt.scatter(times, Tspecies[s], label=specieNames[s], s=0.5)
+    plt.plot(times, Tspecies[s])
+    plt.legend()
+plt.xlabel("Time")
+plt.ylabel("Temperature")
+plt.savefig("out/TemperatureSpecies.eps")
+plt.savefig("out/TemperatureSpecies.png")
 
 img_array = []
 size = (0,0)
