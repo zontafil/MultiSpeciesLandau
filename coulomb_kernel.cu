@@ -114,8 +114,8 @@ namespace Kernel {
             double logsum, dx, dy, kpx, kpy;
             double SQRT2EPSM1 = 1./sqrt(2.*config->eps);
             double PI2EPSM1 = 1./(CONST_2PI * config->eps);
-            ret[2*i_p1] = 0;
-            ret[2*i_p1+1] = 0;
+            rets1[2*i_p1] = 0;
+            rets1[2*i_p1+1] = 0;
             for (int i=0; i<config->nHermite; i++)
             for (int j=0; j<config->nHermite; j++) {
                 logsum = 0;
