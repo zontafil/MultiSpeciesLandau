@@ -213,6 +213,27 @@ namespace Kernel {
         for (int s=0; s<config->nspecies; s++) {
             HANDLE_ERROR(cudaMemcpy(dv[s].data(), h_ret[s], sizeof(double)*dv[s].size(), cudaMemcpyDeviceToHost));
         }
+
+        // free memory
+        for (int s=0; s<config->nspecies; s++) {
+            HANDLE_ERROR(cudaFree(h_ret[s]));
+            HANDLE_ERROR(cudaFree(h_dSdv[s]));
+            HANDLE_ERROR(cudaFree(h_species[s].nu));
+            HANDLE_ERROR(cudaFree(h_p1[s]));
+            HANDLE_ERROR(cudaFree(h_p0[s]));
+            
+        }
+        
+        HANDLE_ERROR(cudaFree(d_ret));
+        HANDLE_ERROR(cudaFree(d_dSdv));
+        HANDLE_ERROR(cudaFree(d_species));
+        HANDLE_ERROR(cudaFree(d_config));
+        HANDLE_ERROR(cudaFree(d_p0));
+        HANDLE_ERROR(cudaFree(d_p1));
+        free(h_p1);
+        free(h_p0);
+        free(h_dSdv);
+        free(h_ret);
     }
 
 
@@ -267,10 +288,6 @@ namespace Kernel {
         l_config->wHermite = d_wHermite;
         HANDLE_ERROR(cudaMemcpy(d_config, l_config, sizeof(Config), cudaMemcpyHostToDevice));
 
-        // for (int s=0; s<config->nspecies; s++) {
-        // // Compute the entropy gradient
-        // HANDLE_ERROR(cudaMemcpy(d_p, p[s], sizeof(Particle2d)*config->nmarkers, cudaMemcpyHostToDevice));
-        // HANDLE_ERROR(cudaMemcpy(d_p2, p[1], sizeof(Particle2d)*config->nmarkers, cudaMemcpyHostToDevice));
         cuda_dSdv<<<nblocks, config->cudaThreadsPerBlock>>>(d_ret, d_p, d_config, d_species);
         HANDLE_ERROR( cudaPeekAtLastError() );
 
@@ -278,8 +295,22 @@ namespace Kernel {
         for (int s=0; s<config->nspecies; s++) {
             HANDLE_ERROR(cudaMemcpy(ret[s].data(), h_ret[s], sizeof(double)*ret[s].size(), cudaMemcpyDeviceToHost));
         }
-        // HANDLE_ERROR(cudaMemcpy(ret[s].data(), d_ret, sizeof(double)*ret[s].size(), cudaMemcpyDeviceToHost));
-        // }
+
+        // free memory
+        for (int s=0; s<config->nspecies; s++) {
+            HANDLE_ERROR(cudaFree(h_ret[s]));
+            HANDLE_ERROR(cudaFree(h_species[s].nu));
+            HANDLE_ERROR(cudaFree(h_p[s]));
+        }
+        
+        HANDLE_ERROR(cudaFree(d_ret));
+        HANDLE_ERROR(cudaFree(d_wHermite));
+        HANDLE_ERROR(cudaFree(d_kHermite));
+        HANDLE_ERROR(cudaFree(d_species));
+        HANDLE_ERROR(cudaFree(d_config));
+        HANDLE_ERROR(cudaFree(d_p));
+        free(h_p);
+        free(h_ret);
     }
 }
 
