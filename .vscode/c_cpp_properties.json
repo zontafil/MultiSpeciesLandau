@@ -8,7 +8,9 @@
             "cppStandard": "c++14",
             "intelliSenseMode": "linux-gcc-x64",
             "includePath": ["~/cudaInclude", "${workspaceRoot}"],
-            "browse": {"limitSymbolsToIncludedHeaders": true}
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
