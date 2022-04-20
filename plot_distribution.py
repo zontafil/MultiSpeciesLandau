@@ -17,14 +17,20 @@ def createDir(path):
 
 files = glob.glob("./out/data/step_C*.txt")
 files.sort()
-fmax = 0
+fmax = None
 nspecies = 0
+file = open(files[0], "r")
+lines = file.readlines()
+nspecies = int(lines[0].strip().split(" ")[0])
+fmax = np.zeros(nspecies)
 for filename in files:
     file = open(filename, "r")
     lines = file.readlines()
+    n = int(math.sqrt(float(lines[0].strip().split(" ")[1])))
     nspecies = int(lines[0].strip().split(" ")[0])
-    for i in range(2+nspecies, len(lines)):
-        fmax = max(fmax, float(lines[i].strip().split(" ")[4]))
+    for s in range(nspecies):
+        for i in range(2+nspecies+s*n*n, s*n*n+n*n):
+            fmax[s] = max(fmax[s], float(lines[i].strip().split(" ")[4]))
 
 E = np.zeros(len(files))
 Eerr = np.zeros(len(files))
@@ -92,9 +98,12 @@ for file_i, filename in enumerate(files):
     plt.cla()
 
     # plot distribution for current time step
-    colourMaps = ["inferno", "viridis", "summer"]
+    colourMaps = ["summer", "inferno", "viridis", "summer"]
+    alphas = [0.7, 0.7]
+    resolutions = [20, 20]
+    vmaxes = [fmax[0]/10, fmax[1]/2]
     for i in range(nspecies):
-        plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), 10, vmax=fmax, alpha=0.7, cmap=colourMaps[i])
+        plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), resolutions[i], vmax=vmaxes[i], alpha=alphas[i], cmap=colourMaps[i])
     imgname = 'out/data/plot_C_' + str(t+1).zfill(6) + '.png'
     plt.axis('equal')
     plt.draw()
@@ -155,6 +164,7 @@ plt.clf()
 for s in range(0, nspecies):
     plt.scatter(times, Tspecies[s], label=specieNames[s], s=0.5)
     plt.plot(times, Tspecies[s])
+    plt.ylim(bottom=0)
     plt.legend()
 plt.xlabel("Time")
 plt.ylabel("Temperature")
