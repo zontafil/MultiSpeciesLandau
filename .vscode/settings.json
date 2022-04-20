@@ -7,9 +7,10 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "lib": true,
-        "out": true,
-        "plots": true,
-        "bin": true
+        "bin": true,
+        "__pycache__": true,
+        "share": true,
+        "savedData": true
     },
     "files.associations": {
         "*.inc": "cpp",

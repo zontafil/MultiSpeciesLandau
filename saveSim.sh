@@ -28,3 +28,6 @@ cp out/minimumdist.eps plots/eps/${OUTFILE}_minimumdist.eps
 cp out/P.eps plots/eps/${OUTFILE}_P.eps
 cp out/PspeciesNorm.eps plots/eps/${OUTFILE}_PspeciesNorm.eps
 cp out/TemperatureSpecies.eps plots/eps/${OUTFILE}_TemperatureSpecies.eps
+
+mkdir -p savedData/$OUTFILE
+cp out/data/*.txt savedData/$OUTFILE/
