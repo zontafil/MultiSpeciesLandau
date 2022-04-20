@@ -17,6 +17,7 @@ void Run(Config* config) {
         p_mesh[i] = initMarkers(i, config, MESH);
         p0[i] = initMarkers(i, config, config->distributionType);
         p1[i] = initMarkers(i, config, config->distributionType);
+        printf("Initial dentisy (n) for specie %d: %e\n", i, nSpecie(p1, i, config));
     }
 
     // initial energy
@@ -389,6 +390,26 @@ void f_eqmotion(
 }
 
 /**
+ * @brief Compute density of a specie, a.k.a. integral of f over velocity
+ * 
+ * @param p 
+ * @param s 
+ * @param config 
+ * @return double 
+ */
+double nSpecie(
+    Particle2d** p,
+    int s,
+    Config* config
+) {
+    double rho = 0;
+    for (int i=0; i<config->nmarkers; i++) {
+        rho += p[s][i].weight;
+    }
+    return rho;
+}
+
+/**
  * @brief Compute specie temperature: 0.5*m*<(v-<v>)^2>
  * 
  * @param p 
@@ -404,11 +425,7 @@ double TemperatureSpecie(
     double T = 0;
     Vector2d V(0,0);
 
-    // compute density, a.k.a. integral of f over velocity
-    double rho = 0;
-    for (int i=0; i<config->nmarkers; i++) {
-        rho += p[s][i].weight;
-    }
+    double rho = nSpecie(p, s, config);
 
     // compute <v>
     for (int i=0; i<config->nmarkers; i++) {

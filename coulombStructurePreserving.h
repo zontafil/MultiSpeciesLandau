@@ -34,6 +34,11 @@ namespace Coulomb {
     );
     double K(Particle2d** p, Config* config);
     double Kspecie(Particle2d** p, int s, Config* config);
+    double nSpecie(
+        Particle2d** p,
+        int s,
+        Config* config
+    );
     double TemperatureSpecie(
         Particle2d** p,
         int s,
