@@ -9,7 +9,5 @@ SIMNAME=${1%.cpp}
 SIMNAME="${SIMNAME##*/}"
 
 rm examples/$SIMNAME.cpp
-rm -rf plots/$SIMNAME.avi
-rm -rf plots/png/${SIMNAME}*.png
-rm -rf plots/eps/${SIMNAME}*.eps
+rm -rf plots/$SIMNAME
 rm -rf savedData/$SIMNAME
