@@ -4,7 +4,7 @@ Coulomb::Config buildConfig() {
     Coulomb::Config config;
 
     double L = 10;
-    int MARKERS_PER_DIM = 20;
+    int MARKERS_PER_DIM = 40;
 
     config.dx = 1E-4; // dx for finite difference derivative
     config.dt = 1/16.;
