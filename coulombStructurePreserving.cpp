@@ -14,10 +14,14 @@ void Run(Config* config) {
     Particle2d** p0 = new Particle2d*[config->nspecies];
     Particle2d** p1 = new Particle2d*[config->nspecies];
     for (int i=0; i<config->nspecies; i++) {
+        Specie specie = config->species[i];
         p_mesh[i] = initMarkers(i, config, MESH);
         p0[i] = initMarkers(i, config, config->distributionType);
         p1[i] = initMarkers(i, config, config->distributionType);
-        printf("Initial dentisy (n) for specie %d: %e\n", i, nSpecie(p1, i, config));
+        printf("Specie %d, n [1]: %e\n", i, nSpecie(p1, i, config));
+        printf("Specie %d, T0 [eV]: %e\n", i, specie.T0);
+        printf("Specie %d, m [kg]: %e\n", i, specie.m);
+        printf("Specie %d, vmax [ms^-1] %e vmin [ms^-1] %e\n", i, specie.xmax, specie.xmin);
     }
 
     // initial energy
@@ -30,8 +34,9 @@ void Run(Config* config) {
         dSdV[s] = VectorXd(2*config->nmarkers);
     }
 
-    print_out(VERBOSE_NORMAL, "Markers: %d dT: %f\n", config->nmarkers, config->dt);
-    print_out(VERBOSE_NORMAL, "Initial Energy: %e\n", E0);
+    print_out(VERBOSE_NORMAL, "Markers: %d dT: %e\n", config->nmarkers, config->dt);
+    print_out(VERBOSE_NORMAL, "Epsilon: %e\n", config->eps);
+    print_out(VERBOSE_NORMAL, "Initial Energy [eV]: %e\n", E0);
     print_out(VERBOSE_NORMAL, "Initial Momentum: %e %e\n", P0[0], P0[1]);
 
     for (int t=0; t<config->n_timesteps; t++) {
@@ -161,13 +166,17 @@ void printState(
  * @param config
  * @return double 
  */
-double f(Vector2d v, int specie, Config* config) {
+double f(Vector2d v, int s, Config* config) {
+    Specie specie = config->species[s];
     double ret = 0;
-    for (int i=0; i<config->species[specie].npeaks; i++) {
-        ret += exp(-(v-config->species[specie].peaks[i]).squaredNorm()/2.);
+    double m = specie.m;
+    double n = specie.n;
+    for (int i=0; i<specie.npeaks; i++) {
+        double kT0 = specie.T0 * CONST_E0; // compute kb * T in SI units
+        ret += exp(-(v-specie.peaks[i]).squaredNorm()*m*0.5/kT0) / (kT0);
     }
 
-    ret *= pow(config->h,2)/(4.*CONST_PI);
+    ret *= n*(specie.ymax-specie.ymin)*(specie.xmax-specie.xmin)/(config->nx*config->ny)*m/(CONST_2PI);
     return ret;
 }
 
@@ -215,34 +224,35 @@ double psi(Vector2d v, double eps) {
  * @param p 
  * @param config 
  */
-Particle2d* initMarkers(int specie, Config* config, DistributionType type) {
+Particle2d* initMarkers(int s, Config* config, DistributionType type) {
     int nmarkers = config->nmarkers;
     Particle2d* ret;
     ret = new Particle2d[config->nmarkers];
     int idx;
+    Specie specie = config->species[s];
     for (int i = 0; i<config->ny; i++) {
         for (int j = 0; j<config->nx; j++) {
             idx = i*config->nx + j;
             if (type == UNIFORM) {
-                ret[idx].z[0] = double(rand()) / RAND_MAX * (config->xmax - config->xmin) + config->xmin;
-                ret[idx].z[1] = double(rand()) / RAND_MAX * (config->ymax - config->ymin) + config->ymin;
+                ret[idx].z[0] = double(rand()) / RAND_MAX * (specie.xmax - specie.xmin) + specie.xmin;
+                ret[idx].z[1] = double(rand()) / RAND_MAX * (specie.ymax - specie.ymin) + specie.ymin;
             } else if (type == MESH) {
-                ret[idx].z[0] = double(j+0.5) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
-                ret[idx].z[1] = double(i+0.5) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
+                ret[idx].z[0] = double(j+0.5) / (config->nx) * (specie.xmax-specie.xmin) + specie.xmin;
+                ret[idx].z[1] = double(i+0.5) / (config->nx) * (specie.ymax-specie.ymin) + specie.ymin;
             } else if (type == MESH_SHIFT) {
                 double shift = 0;
-                if (specie == 1) {
+                if (s == 1) {
                     shift = 0.5;
                 }
-                ret[idx].z[0] = double(j+shift) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
-                ret[idx].z[1] = double(i+shift) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
+                ret[idx].z[0] = double(j+shift) / (config->nx) * (specie.xmax-specie.xmin) + specie.xmin;
+                ret[idx].z[1] = double(i+shift) / (config->nx) * (specie.ymax-specie.ymin) + specie.ymin;
             } else if (type == MESH_PEAK_CENTERED) {
                 double dx = 0.1;
-                Vector2d peak = config->species[specie].peaks[0];
-                ret[idx].z[0] = double(j+0.5) / (config->nx) * (config->xmax-config->xmin) + peak(0) - dx/2;
-                ret[idx].z[1] = double(i+0.5) / (config->ny) * (config->ymax-config->ymin) + peak(1) - dx/2;
+                Vector2d peak = specie.peaks[0];
+                ret[idx].z[0] = double(j+0.5) / (config->nx) * (specie.xmax-specie.xmin) + peak(0) - dx/2;
+                ret[idx].z[1] = double(i+0.5) / (config->ny) * (specie.ymax-specie.ymin) + peak(1) - dx/2;
             }
-            ret[idx].weight = f(ret[idx].z, specie, config);
+            ret[idx].weight = f(ret[idx].z, s, config);
         }
     }
     return ret;
@@ -442,7 +452,7 @@ double TemperatureSpecie(
 }
 
 /**
- * @brief Compute the kinetic energy of a specie
+ * @brief Compute the kinetic energy of a specie [eV]
  * 
  * @param p 
  * @param s index of the specie
@@ -454,7 +464,7 @@ double Kspecie(Particle2d** p, int s, Config* config) {
     for (int i = 0; i<config->nmarkers; i++) {
         ret += p[s][i].weight * config->species[s].m * 0.5 * p[s][i].z.squaredNorm();
     }
-    return ret;
+    return ret / CONST_E;
 }
 
 /**
@@ -501,6 +511,68 @@ Vector2d Momentum(Particle2d** p, Config* config) {
         ret += MomentumSpecie(p, s, config);
     }
     return ret;
+}
+
+/**
+ * @brief Evaluate Coulomb logarithm.
+ *
+ * Coulomb logarithm is evaluated separately with respect to each plasma
+ * species. It is calculated as a logarithm of the ratio of maximum and
+ * minimum impact parameters. Maximum impact parameter is the Debye length
+ * and minimum impact parameter is classical particle radius
+ *
+ * @param clogab array where evaluated values for Coulomb logarithm are stored.
+ * @param ma test particle mass [kg]
+ * @param qa test particle charge [C]
+ * @param va test particle velocity [m/s]
+ * @param nspec number of plasma species
+ * @param mb plasma species masses [kg]
+ * @param qb plasma species charges [C]
+ * @param nb plasma species densities [m^-3]
+ * @param Tb plasma species temperatures [J]
+ */
+double mccc_coefs_clog(int s1, int s2, Config* config) {
+
+    /* Evaluate Debye length */
+    double sum = 0;
+    for(int i = 0; i < config->nspecies; i++){
+        double qb = config->species[i].q;
+        sum += config->species[i].n * qb * qb / config->species[i].T0 * CONST_E0;
+    }
+    double debyeLength = sqrt(CONST_E0/sum);
+
+    /* Evaluate classical and quantum mechanical impact parameter. The one *
+     * that is larger is used to evaluate Coulomb logarithm.               */
+    double va = config->species[s1].peaks[0].squaredNorm();
+    double qa = config->species[s1].q;
+    double qb = config->species[s2].q;
+    double Tb = config->species[s2].T0 * CONST_E0;
+    double ma = config->species[s1].m;
+    double mb = config->species[s2].m;
+    double vbar = va * va + 2 * Tb / mb;
+    double mr   = ma * mb / ( ma + mb );
+    double bcl  = fabs( qa * qb / ( 4*CONST_PI*CONST_E0 * mr * vbar ) );
+
+    return log( debyeLength / bcl );
+}
+
+/**
+ * @brief Evaluate collision parameter
+ *
+ *\f$c_{ab} = \frac{n_b q_a^2q_b^2 \ln\Lambda_{ab}}{4\pi\epsilon_0^2}\f$
+ *
+ * where
+ *
+ * - \f$q_a\f$ is test particle charge [C]
+ * - \f$q_b\f$ is plasma species charge [C]
+ * - \f$n_b\f$ is plasma species density [m^-3]
+ * - \f$\ln\Lambda_{ab}\f$ is Coulomb logarithm.
+ */
+double mccc_coefs_cab(int s1, int s2, Config* config) {
+    double qa = config->species[s1].q;
+    double qb = config->species[s1].q;
+    printf("logc %e\n", mccc_coefs_clog(s1, s2, config));
+    return qa*qa * qb*qb * mccc_coefs_clog(s1, s2, config) / ( 8 * CONST_PI * CONST_E0*CONST_E0 );
 }
 
 }

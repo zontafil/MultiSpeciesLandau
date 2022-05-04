@@ -96,6 +96,7 @@ namespace Kernel {
 
     /**
      * @brief CUDA version of entropy gradient
+     * return - dS/dV / (m * w_p)
      */
     __global__ void cuda_dSdv(
         double** ret,

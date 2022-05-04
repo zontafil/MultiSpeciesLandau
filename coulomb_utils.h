@@ -24,6 +24,13 @@ using namespace Eigen;
 #define CONST_PI     3.1415926535897932384626
 #define CONST_2PI    6.2831853071795862319959
 #define PI2E0_5 2.50662827463
+#define CONST_KB 1.3807e-23
+#define CONST_E 1.602176565e-19
+#define CONST_ME 9.1093837E-31
+#define CONST_MI 3.3435837724E-27
+
+/** @brief Electric constant [m^-3*kg^-1*s^4*A^2]                             */
+#define CONST_E0 8.8542e-12
 
 enum {
     VERBOSE_SILLY = 3,
@@ -47,8 +54,15 @@ namespace Coulomb {
     typedef struct {
         int npeaks;
         Vector2d* peaks;
+        double T0; // array of initial temperatures of the peaks [eV]
         double m;
         double* nu;
+        double q;
+        double n;
+        double xmin;
+        double xmax;
+        double ymin;
+        double ymax;
         char name[20];
     } Specie;
 
@@ -60,11 +74,7 @@ namespace Coulomb {
     } DistributionType;
 
     typedef struct {
-        double xmin;
-        double xmax;
         int nx;
-        double ymin;
-        double ymax;
         int ny;
         int nmarkers;
         DistributionType distributionType;

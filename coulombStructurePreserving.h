@@ -55,4 +55,6 @@ namespace Coulomb {
         double E0,
         Vector2d P0
     );
+    double mccc_coefs_clog(int s1, int s2, Config* config);
+    double mccc_coefs_cab(int s1, int s2, Config* config);
 }
