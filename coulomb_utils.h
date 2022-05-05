@@ -91,7 +91,12 @@ namespace Coulomb {
         int nHermite;
         int recordAtStep;
         int cudaThreadsPerBlock;
-        int normalize; // normalize parameters. Recommended
+
+        // normalization constants
+        int normalize; // normalize flag. Recommended to be set
+        double n0;
+        double v0;
+        double t0;
 
         int nspecies;
         Specie* species;

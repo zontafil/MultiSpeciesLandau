@@ -26,6 +26,7 @@ void Run(Config* config0) {
         p1[i] = initMarkers(i, config, config->distributionType);
         printf("Specie %d, n [1]: %e\n", i, nSpecie(p1, i, config));
         printf("Specie %d, T0 [eV]: %e\n", i, specie.T);
+        printf("Specie %d, T0comp [eV]: %e\n", i, TemperatureSpecie(p0, i, config));
         printf("Specie %d, m [kg]: %e\n", i, specie.m);
         printf("Specie %d, vmax [ms^-1] %e vmin [ms^-1] %e\n", i, specie.xmax, specie.xmin);
         for (int s=0; s<config->nspecies; s++) {
@@ -125,6 +126,7 @@ Config* normalizeConfig(Config* config) {
     ret->eps = 0.64*pow(2.*ret->species[0].xmax/v0/10., 1.98); // Force epsilon to be the standard value. To Test the normalization
 
     double T0 = ret->species[0].T; // use first specie T as base for normalization
+    T0 = CONST_ME * v0 * v0 / CONST_E;
     for (int s=0; s<ret->nspecies; s++) {
         ret->species[s].T /= T0;
         ret->species[s].m /= CONST_ME;
@@ -142,6 +144,10 @@ Config* normalizeConfig(Config* config) {
             ret->species[s].peaks[i] /= v0;
         }
     }
+
+    ret->n0 = n0;
+    ret->v0 = v0;
+    ret->t0 = t0;
     
     return ret;
 }
@@ -209,7 +215,11 @@ void printState(
         }
     }
 
-    fprintf(fout, "%d %d\n", config->nspecies, config->nmarkers);
+    double dt = config->dt;
+    if (config->normalize) {
+        dt *= config->t0;
+    }
+    fprintf(fout, "%d %d %e\n", config->nspecies, config->nmarkers, dt);
     fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1], distmin);
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);
@@ -219,7 +229,11 @@ void printState(
     }
     for (int s=0; s<config->nspecies; s++) {
         for (int i=0; i<config->nmarkers; i++) {
-            fprintf(fout, "%d %d %e %e %e\n", s, i, p_mesh[s][i].z[0], p_mesh[s][i].z[1], f_mesh[s][i]);
+            Vector2d z = p_mesh[s][i].z;
+            if (config->normalize) {
+                z *= config->v0;
+            }
+            fprintf(fout, "%d %d %e %e %e\n", s, i, z(0), z(1), f_mesh[s][i]);
         }
     }
 
@@ -283,6 +297,9 @@ void mesh_distribution(
                 ret[s][i] += exp(-(p_mesh[s][i].z - p[s][j].z).squaredNorm()*CONST_2EPS_M1)*p[s][j].weight;
             }
             ret[s][i] *= CONST_2PIEPS_M1;
+            if (config->normalize) {
+                ret[s][i] *= config->n0;
+            }
         }
     }
 }
@@ -528,6 +545,9 @@ double TemperatureSpecie(
         T += p[s][i].weight * (p[s][i].z - V).squaredNorm();
     }
     T *= 0.5 * config->species[s].m / rho;
+    if (config->normalize) {
+        T *= CONST_ME * config->v0 * config->v0 / CONST_E;
+    }
     return T;
 }
 
@@ -543,6 +563,9 @@ double Kspecie(Particle2d** p, int s, Config* config) {
     double ret = 0;
     for (int i = 0; i<config->nmarkers; i++) {
         ret += p[s][i].weight * config->species[s].m * 0.5 * p[s][i].z.squaredNorm();
+    }
+    if (config->normalize) {
+        ret *= config->n0 * CONST_ME * config->v0 * config->v0;
     }
     return ret;
 }
@@ -574,6 +597,9 @@ Vector2d MomentumSpecie(Particle2d** p, int s, Config* config) {
     Vector2d ret(0,0);
     for (int i=0; i<config->nmarkers; i++) {
         ret += p[s][i].weight * config->species[s].m * p[s][i].z;
+    }
+    if (config->normalize) {
+        ret *= config->n0 * CONST_ME * config->v0;
     }
     return ret;
 }
