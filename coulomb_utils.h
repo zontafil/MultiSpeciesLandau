@@ -54,7 +54,7 @@ namespace Coulomb {
     typedef struct {
         int npeaks;
         Vector2d* peaks;
-        double T0; // array of initial temperatures of the peaks [eV]
+        double T; // array of initial temperatures of the peaks [eV]
         double m;
         double* nu;
         double q;
@@ -91,6 +91,7 @@ namespace Coulomb {
         int nHermite;
         int recordAtStep;
         int cudaThreadsPerBlock;
+        int normalize; // normalize parameters. Recommended
 
         int nspecies;
         Specie* species;

@@ -9,7 +9,13 @@ namespace Coulomb {
  * 
  * @param config 
  */
-void Run(Config* config) {
+void Run(Config* config0) {
+    Config* config;
+    if (config0->normalize) {
+        config = normalizeConfig(config0);
+    } else {
+        config = config0;
+    }
     Particle2d** p_mesh = new Particle2d*[config->nspecies];
     Particle2d** p0 = new Particle2d*[config->nspecies];
     Particle2d** p1 = new Particle2d*[config->nspecies];
@@ -19,9 +25,12 @@ void Run(Config* config) {
         p0[i] = initMarkers(i, config, config->distributionType);
         p1[i] = initMarkers(i, config, config->distributionType);
         printf("Specie %d, n [1]: %e\n", i, nSpecie(p1, i, config));
-        printf("Specie %d, T0 [eV]: %e\n", i, specie.T0);
+        printf("Specie %d, T0 [eV]: %e\n", i, specie.T);
         printf("Specie %d, m [kg]: %e\n", i, specie.m);
         printf("Specie %d, vmax [ms^-1] %e vmin [ms^-1] %e\n", i, specie.xmax, specie.xmin);
+        for (int s=0; s<config->nspecies; s++) {
+            printf("nu%d%d %e\n", i,s, specie.nu[s]);
+        }
     }
 
     // initial energy
@@ -86,6 +95,74 @@ void Run(Config* config) {
         free(p_mesh[s]);
         free(f_mesh[s]);
     }
+}
+
+/**
+ * @brief Normalize config object parameters
+ * 
+ * @param config 
+ * @return Config* 
+ */
+Config* normalizeConfig(Config* config) {
+    Config* ret = copyConfig(config);
+
+    double v0 = 0;
+    double n0 = 0;
+    for (int s=0; s<ret->nspecies; s++) {
+        v0 = fmax(v0, ret->species[s].xmax);
+        v0 = fmax(v0, ret->species[s].ymax);
+        n0 = fmax(n0, ret->species[s].n);
+    }
+    v0 /= 10.; // make the box = [-10,10]
+    double nu0 = CONST_E * CONST_E * CONST_E * CONST_E / (8. * CONST_PI * CONST_E0 * CONST_E0);
+    nu0 *= mccc_coefs_clog(0, 0, config);
+    double t0 = v0 * v0 * v0 * CONST_ME * CONST_ME / (n0 * nu0);
+
+    ret->dt /= t0;
+    ret->h /= v0;
+
+    ret->eps /= (v0*v0);
+    ret->eps = 0.64*pow(2.*ret->species[0].xmax/v0/10., 1.98); // Force epsilon to be the standard value. To Test the normalization
+
+    double T0 = ret->species[0].T; // use first specie T as base for normalization
+    for (int s=0; s<ret->nspecies; s++) {
+        ret->species[s].T /= T0;
+        ret->species[s].m /= CONST_ME;
+        ret->species[s].q /= CONST_E;
+        ret->species[s].n /= n0;
+        ret->species[s].xmin /= v0;
+        ret->species[s].xmax /= v0;
+        ret->species[s].ymin /= v0;
+        ret->species[s].ymax /= v0;
+        for (int i=0; i<ret->nspecies; i++) {
+            ret->species[s].nu[i] /= nu0;
+            ret->species[s].nu[i] = 1.; // FIXME ====
+        }
+        for (int i=0; i<ret->species[s].npeaks; i++) {
+            ret->species[s].peaks[i] /= v0;
+        }
+    }
+    
+    return ret;
+}
+
+/**
+ * @brief Deep copy the config object
+ * 
+ * @param config 
+ * @return Config* 
+ */
+Config* copyConfig(Config* config) {
+    Config* ret = (Config*)malloc(sizeof(Config));
+    memcpy (ret, config, sizeof (Config));
+    memcpy (ret->species, config->species, config->nspecies * sizeof (Specie));
+    memcpy (ret->kHermite, config->kHermite, config->nHermite * sizeof (double));
+    memcpy (ret->wHermite, config->wHermite, config->nHermite * sizeof (double));
+    for (int i=0; i<ret->nspecies; i++) {
+        memcpy (ret->species[i].nu, config->species[i].nu, config->nspecies * sizeof (double));
+        memcpy (ret->species[i].name, config->species[i].name, 20 * sizeof (char));
+    }
+    return ret;
 }
 
 /**
@@ -171,9 +248,12 @@ double f(Vector2d v, int s, Config* config) {
     double ret = 0;
     double m = specie.m;
     double n = specie.n;
+    double T = specie.T * CONST_E;
+    if (config->normalize) {
+        T = specie.T;
+    }
     for (int i=0; i<specie.npeaks; i++) {
-        double kT0 = specie.T0 * CONST_E0; // compute kb * T in SI units
-        ret += exp(-(v-specie.peaks[i]).squaredNorm()*m*0.5/kT0) / (kT0);
+        ret += exp(-(v-specie.peaks[i]).squaredNorm()*m*0.5/T) / T;
     }
 
     ret *= n*(specie.ymax-specie.ymin)*(specie.xmax-specie.xmin)/(config->nx*config->ny)*m/(CONST_2PI);
@@ -464,7 +544,7 @@ double Kspecie(Particle2d** p, int s, Config* config) {
     for (int i = 0; i<config->nmarkers; i++) {
         ret += p[s][i].weight * config->species[s].m * 0.5 * p[s][i].z.squaredNorm();
     }
-    return ret / CONST_E;
+    return ret;
 }
 
 /**
@@ -537,7 +617,7 @@ double mccc_coefs_clog(int s1, int s2, Config* config) {
     double sum = 0;
     for(int i = 0; i < config->nspecies; i++){
         double qb = config->species[i].q;
-        sum += config->species[i].n * qb * qb / config->species[i].T0 * CONST_E0;
+        sum += config->species[i].n * qb * qb / config->species[i].T * CONST_E0;
     }
     double debyeLength = sqrt(CONST_E0/sum);
 
@@ -546,7 +626,7 @@ double mccc_coefs_clog(int s1, int s2, Config* config) {
     double va = config->species[s1].peaks[0].squaredNorm();
     double qa = config->species[s1].q;
     double qb = config->species[s2].q;
-    double Tb = config->species[s2].T0 * CONST_E0;
+    double Tb = config->species[s2].T * CONST_E0;
     double ma = config->species[s1].m;
     double mb = config->species[s2].m;
     double vbar = va * va + 2 * Tb / mb;
@@ -571,7 +651,6 @@ double mccc_coefs_clog(int s1, int s2, Config* config) {
 double mccc_coefs_cab(int s1, int s2, Config* config) {
     double qa = config->species[s1].q;
     double qb = config->species[s1].q;
-    printf("logc %e\n", mccc_coefs_clog(s1, s2, config));
     return qa*qa * qb*qb * mccc_coefs_clog(s1, s2, config) / ( 8 * CONST_PI * CONST_E0*CONST_E0 );
 }
 
