@@ -34,6 +34,8 @@ void Run(Config* config0) {
         }
     }
 
+    
+
     // initial energy
     double E0 = K(p1, config), E;
     double** f_mesh = new double*[config->nspecies];
@@ -42,10 +44,10 @@ void Run(Config* config0) {
     for (int s=0; s<config->nspecies; s++) {
         f_mesh[s] = new double[config->nmarkers];
         dSdV[s] = VectorXd(2*config->nmarkers);
+        print_out(VERBOSE_NORMAL, "Specie %d Epsilon: %e\n", s, config->species[s].eps);
     }
 
     print_out(VERBOSE_NORMAL, "Markers: %d dT: %e\n", config->nmarkers, config->dt);
-    print_out(VERBOSE_NORMAL, "Epsilon: %e\n", config->eps);
     print_out(VERBOSE_NORMAL, "Initial Energy [eV]: %e\n", E0);
     print_out(VERBOSE_NORMAL, "Initial Momentum: %e %e\n", P0[0], P0[1]);
 
@@ -117,17 +119,19 @@ Config* normalizeConfig(Config* config) {
     v0 /= 10.; // make the box = [-10,10]
     double nu0 = CONST_E * CONST_E * CONST_E * CONST_E / (8. * CONST_PI * CONST_E0 * CONST_E0);
     nu0 *= mccc_coefs_clog(0, 0, config);
+    printf("NU0 %e\n", nu0);
     double t0 = v0 * v0 * v0 * CONST_ME * CONST_ME / (n0 * nu0);
 
     ret->dt /= t0;
     ret->h /= v0;
 
-    ret->eps /= (v0*v0);
-    ret->eps = 0.64*pow(2.*ret->species[0].xmax/v0/10., 1.98); // Force epsilon to be the standard value. To Test the normalization
+    // ret->eps /= (v0*v0);
 
     double T0 = ret->species[0].T; // use first specie T as base for normalization
     T0 = CONST_ME * v0 * v0 / CONST_E;
     for (int s=0; s<ret->nspecies; s++) {
+        ret->species[s].eps /= (v0*v0);
+        printf("Specie %d eps %e eps_normalized %e\n", s, ret->species[s].eps*v0*v0, ret->species[s].eps);
         ret->species[s].T /= T0;
         ret->species[s].m /= CONST_ME;
         ret->species[s].q /= CONST_E;
@@ -291,8 +295,8 @@ void mesh_distribution(
     for (int s=0; s<config->nspecies; s++) {
         for (int i=0; i<config->nmarkers; i++) {
             ret[s][i] = 0;
-            double CONST_2EPS_M1 = 1./(2.*config->eps);
-            double CONST_2PIEPS_M1 = 1./(CONST_2PI*config->eps);
+            double CONST_2EPS_M1 = 1./(2.*config->species[s].eps);
+            double CONST_2PIEPS_M1 = 1./(CONST_2PI*config->species[s].eps);
             for (int j=0; j<config->nmarkers; j++) {
                 ret[s][i] += exp(-(p_mesh[s][i].z - p[s][j].z).squaredNorm()*CONST_2EPS_M1)*p[s][j].weight;
             }

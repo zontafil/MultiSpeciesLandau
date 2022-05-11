@@ -113,8 +113,9 @@ namespace Kernel {
             double* rets1 = ret[s];
             double m = species[s].m;
             double logsum, dx, dy, kpx, kpy;
-            double SQRT2EPSM1 = 1./sqrt(2.*config->eps);
-            double PI2EPSM1 = 1./(CONST_2PI * config->eps);
+            double eps = species[s].eps;
+            double SQRT2EPSM1 = 1./sqrt(2.*eps);
+            double PI2EPSM1 = 1./(CONST_2PI * eps);
             rets1[2*i_p1] = 0;
             rets1[2*i_p1+1] = 0;
             for (int i=0; i<config->nHermite; i++)
@@ -134,8 +135,8 @@ namespace Kernel {
                 rets1[2*i_p1] += logsum * config->kHermite[i];
                 rets1[2*i_p1+1] += logsum * config->kHermite[j];
             }
-            rets1[2*i_p1] *= sqrt(2.*config->eps) / (m * CONST_PI * config->eps);
-            rets1[2*i_p1+1] *= sqrt(2.*config->eps) / (m * CONST_PI * config->eps);
+            rets1[2*i_p1] *= sqrt(2.*eps) / (m * CONST_PI * eps);
+            rets1[2*i_p1+1] *= sqrt(2.*eps) / (m * CONST_PI * eps);
         }
     }
 

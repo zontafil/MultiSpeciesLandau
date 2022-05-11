@@ -64,6 +64,7 @@ namespace Coulomb {
         double ymin;
         double ymax;
         char name[20];
+        double eps;
     } Specie;
 
     typedef enum {
@@ -81,7 +82,6 @@ namespace Coulomb {
         double dt;
         double dx;
         double h;
-        double eps;
         int n_timesteps;
         double newtonTolerance;
         int useNewton;
