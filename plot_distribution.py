@@ -147,7 +147,7 @@ for s in range(0, nspecies):
     plt.plot(times, Especies[s])
     plt.legend()
 plt.xlabel("Time [s]")
-plt.ylabel("Energy [J]")
+plt.ylabel("Total Energy [J]")
 plt.savefig("out/EnergySpecies.eps")
 plt.savefig("out/EnergySpecies.png")
 
@@ -168,7 +168,7 @@ for s in range(0, nspecies):
     plt.scatter(times, Tspecies[s], label=specieNames[s], s=0.5)
     plt.plot(times, Tspecies[s])
 plt.legend()
-plt.ylim(bottom=0)
+# plt.ylim(bottom=0)
 plt.xlabel("Time [s]")
 plt.ylabel("Temperature [eV]")
 plt.savefig("out/TemperatureSpecies.eps")
