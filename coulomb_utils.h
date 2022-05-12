@@ -54,7 +54,8 @@ namespace Coulomb {
     typedef struct {
         int npeaks;
         Vector2d* peaks;
-        double T; // array of initial temperatures of the peaks [eV]
+        double Tx;
+        double Ty;
         double m;
         double* nu;
         double q;
@@ -81,7 +82,6 @@ namespace Coulomb {
         DistributionType distributionType;
         double dt;
         double dx;
-        double h;
         int n_timesteps;
         double newtonTolerance;
         int useNewton;

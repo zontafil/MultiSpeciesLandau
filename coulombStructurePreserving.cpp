@@ -25,7 +25,8 @@ void Run(Config* config0) {
         p0[i] = initMarkers(i, config, config->distributionType);
         p1[i] = initMarkers(i, config, config->distributionType);
         printf("Specie %d, n [1]: %e\n", i, nSpecie(p1, i, config));
-        printf("Specie %d, T0 [eV]: %e\n", i, specie.T);
+        printf("Specie %d, T0x [eV]: %e\n", i, specie.Tx);
+        printf("Specie %d, T0y [eV]: %e\n", i, specie.Ty);
         printf("Specie %d, T0comp [eV]: %e\n", i, TemperatureSpecie(p0, i, config));
         printf("Specie %d, m [kg]: %e\n", i, specie.m);
         printf("Specie %d, vmax [ms^-1] %e vmin [ms^-1] %e\n", i, specie.xmax, specie.xmin);
@@ -121,18 +122,16 @@ Config* normalizeConfig(Config* config) {
     nu0 *= mccc_coefs_clog(0, 0, config);
     printf("NU0 %e\n", nu0);
     double t0 = v0 * v0 * v0 * CONST_ME * CONST_ME / (n0 * nu0);
-
     ret->dt /= t0;
-    ret->h /= v0;
 
-    // ret->eps /= (v0*v0);
-
-    double T0 = ret->species[0].T; // use first specie T as base for normalization
-    T0 = CONST_ME * v0 * v0 / CONST_E;
+    // double T0x = ret->species[0].Tx; // use first specie T as base for normalization
+    // double T0y = ret->species[0].Ty; // use first specie T as base for normalization
+    double T0 = CONST_ME * v0 * v0 / CONST_E;
     for (int s=0; s<ret->nspecies; s++) {
         ret->species[s].eps /= (v0*v0);
         printf("Specie %d eps %e eps_normalized %e\n", s, ret->species[s].eps*v0*v0, ret->species[s].eps);
-        ret->species[s].T /= T0;
+        ret->species[s].Tx /= T0;
+        ret->species[s].Ty /= T0;
         ret->species[s].m /= CONST_ME;
         ret->species[s].q /= CONST_E;
         ret->species[s].n /= n0;
@@ -266,12 +265,14 @@ double f(Vector2d v, int s, Config* config) {
     double ret = 0;
     double m = specie.m;
     double n = specie.n;
-    double T = specie.T * CONST_E;
+    double Tx = specie.Tx * CONST_E; // compute T in Kelvin
+    double Ty = specie.Ty * CONST_E; // compute T in Kelvin
     if (config->normalize) {
-        T = specie.T;
+        Tx = specie.Tx;
+        Ty = specie.Ty;
     }
     for (int i=0; i<specie.npeaks; i++) {
-        ret += exp(-(v-specie.peaks[i]).squaredNorm()*m*0.5/T) / T;
+        ret += exp(-(pow(v(0)-specie.peaks[i](0),2)/Tx + pow(v(1)-specie.peaks[i](1),2)/Ty) *m*0.5) / sqrt(Tx*Ty);
     }
 
     ret *= n*(specie.ymax-specie.ymin)*(specie.xmax-specie.xmin)/(config->nx*config->ny)*m/(CONST_2PI);
@@ -647,7 +648,7 @@ double mccc_coefs_clog(int s1, int s2, Config* config) {
     double sum = 0;
     for(int i = 0; i < config->nspecies; i++){
         double qb = config->species[i].q;
-        sum += config->species[i].n * qb * qb / config->species[i].T * CONST_E0;
+        sum += config->species[i].n * qb * qb / sqrt(config->species[i].Tx*config->species[i].Ty) * CONST_E0;
     }
     double debyeLength = sqrt(CONST_E0/sum);
 
@@ -656,7 +657,7 @@ double mccc_coefs_clog(int s1, int s2, Config* config) {
     double va = config->species[s1].peaks[0].squaredNorm();
     double qa = config->species[s1].q;
     double qb = config->species[s2].q;
-    double Tb = config->species[s2].T * CONST_E0;
+    double Tb = sqrt(config->species[s2].Tx*config->species[s2].Ty) * CONST_E0;
     double ma = config->species[s1].m;
     double mb = config->species[s2].m;
     double vbar = va * va + 2 * Tb / mb;
