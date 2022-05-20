@@ -24,6 +24,12 @@ The CPU version is currently not wokring. TO FIX
 
 `CUDA=1 make`
 
+### Logging levels and debug symbols
+
+Set the ENV variables `VERBOSE=1` or `SILLY=1` to have more verbose debug logs.
+
+Set `DEBUG=1` to enable the debug symbols and disable memory optimizations.
+
 ## Run
 
 `./coulomb`

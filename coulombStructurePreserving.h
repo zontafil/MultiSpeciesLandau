@@ -4,6 +4,8 @@
 namespace Coulomb {
 
     void Run(Config* config);
+    Config* normalizeConfig(Config* config);
+    Config* copyConfig(Config* config);
     double f(Vector2d v, int specie, Config* config);
     Particle2d* initMarkers(int specie, Config* config, DistributionType type);
     double psi(Vector2d v, double eps);
@@ -55,4 +57,6 @@ namespace Coulomb {
         double E0,
         Vector2d P0
     );
+    double mccc_coefs_clog(int s1, int s2, Config* config);
+    double coefs_nu(int s1, int s2, Config* config);
 }

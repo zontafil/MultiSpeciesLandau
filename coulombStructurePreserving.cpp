@@ -9,16 +9,33 @@ namespace Coulomb {
  * 
  * @param config 
  */
-void Run(Config* config) {
+void Run(Config* config0) {
+    Config* config;
+    if (config0->normalize) {
+        config = normalizeConfig(config0);
+    } else {
+        config = config0;
+    }
     Particle2d** p_mesh = new Particle2d*[config->nspecies];
     Particle2d** p0 = new Particle2d*[config->nspecies];
     Particle2d** p1 = new Particle2d*[config->nspecies];
     for (int i=0; i<config->nspecies; i++) {
+        Specie specie = config->species[i];
         p_mesh[i] = initMarkers(i, config, MESH);
         p0[i] = initMarkers(i, config, config->distributionType);
         p1[i] = initMarkers(i, config, config->distributionType);
-        printf("Initial dentisy (n) for specie %d: %e\n", i, nSpecie(p1, i, config));
+        printf("Specie %d, n [1]: %e\n", i, nSpecie(p1, i, config));
+        printf("Specie %d, T0x [eV]: %e\n", i, specie.Tx);
+        printf("Specie %d, T0y [eV]: %e\n", i, specie.Ty);
+        printf("Specie %d, T0comp [eV]: %e\n", i, TemperatureSpecie(p0, i, config));
+        printf("Specie %d, m [kg]: %e\n", i, specie.m);
+        printf("Specie %d, vmax [ms^-1] %e vmin [ms^-1] %e\n", i, specie.xmax, specie.xmin);
+        for (int s=0; s<config->nspecies; s++) {
+            printf("nu%d%d %e\n", i,s, specie.nu[s]);
+        }
     }
+
+    
 
     // initial energy
     double E0 = K(p1, config), E;
@@ -28,10 +45,11 @@ void Run(Config* config) {
     for (int s=0; s<config->nspecies; s++) {
         f_mesh[s] = new double[config->nmarkers];
         dSdV[s] = VectorXd(2*config->nmarkers);
+        print_out(VERBOSE_NORMAL, "Specie %d Epsilon: %e\n", s, config->species[s].eps);
     }
 
-    print_out(VERBOSE_NORMAL, "Markers: %d dT: %f\n", config->nmarkers, config->dt);
-    print_out(VERBOSE_NORMAL, "Initial Energy: %e\n", E0);
+    print_out(VERBOSE_NORMAL, "Markers: %d dT: %e\n", config->nmarkers, config->dt);
+    print_out(VERBOSE_NORMAL, "Initial Energy [eV]: %e\n", E0);
     print_out(VERBOSE_NORMAL, "Initial Momentum: %e %e\n", P0[0], P0[1]);
 
     for (int t=0; t<config->n_timesteps; t++) {
@@ -84,6 +102,80 @@ void Run(Config* config) {
 }
 
 /**
+ * @brief Normalize config object parameters
+ * 
+ * @param config 
+ * @return Config* 
+ */
+Config* normalizeConfig(Config* config) {
+    Config* ret = copyConfig(config);
+
+    double v0 = 0;
+    double n0 = 0;
+    for (int s=0; s<ret->nspecies; s++) {
+        v0 = fmax(v0, ret->species[s].xmax);
+        v0 = fmax(v0, ret->species[s].ymax);
+        n0 = fmax(n0, ret->species[s].n);
+    }
+    v0 /= 10.; // make the box = [-10,10]
+    double nu0 = CONST_E * CONST_E * CONST_E * CONST_E / (8. * CONST_PI * CONST_E0 * CONST_E0);
+    nu0 *= mccc_coefs_clog(0, 0, config);
+    printf("NU0 %e\n", nu0);
+    double t0 = v0 * v0 * v0 * CONST_ME * CONST_ME / (n0 * nu0);
+    ret->dt /= t0;
+
+    // double T0x = ret->species[0].Tx; // use first specie T as base for normalization
+    // double T0y = ret->species[0].Ty; // use first specie T as base for normalization
+    double T0 = CONST_ME * v0 * v0 / CONST_E;
+    for (int s=0; s<ret->nspecies; s++) {
+        ret->species[s].eps /= (v0*v0);
+        printf("Specie %d eps %e eps_normalized %e\n", s, ret->species[s].eps*v0*v0, ret->species[s].eps);
+        ret->species[s].Tx /= T0;
+        ret->species[s].Ty /= T0;
+        ret->species[s].m /= CONST_ME;
+        ret->species[s].q /= CONST_E;
+        ret->species[s].n /= n0;
+        ret->species[s].xmin /= v0;
+        ret->species[s].xmax /= v0;
+        ret->species[s].ymin /= v0;
+        ret->species[s].ymax /= v0;
+        for (int i=0; i<ret->nspecies; i++) {
+            ret->species[s].nu[i] /= nu0;
+            ret->species[s].nu[i] = 1.; // FIXME ====
+        }
+        for (int i=0; i<ret->species[s].npeaks; i++) {
+            ret->species[s].peaks[i] /= v0;
+        }
+    }
+
+    ret->n0 = n0;
+    ret->v0 = v0;
+    ret->t0 = t0;
+    ret->T0 = T0;
+    
+    return ret;
+}
+
+/**
+ * @brief Deep copy the config object
+ * 
+ * @param config 
+ * @return Config* 
+ */
+Config* copyConfig(Config* config) {
+    Config* ret = (Config*)malloc(sizeof(Config));
+    memcpy (ret, config, sizeof (Config));
+    memcpy (ret->species, config->species, config->nspecies * sizeof (Specie));
+    memcpy (ret->kHermite, config->kHermite, config->nHermite * sizeof (double));
+    memcpy (ret->wHermite, config->wHermite, config->nHermite * sizeof (double));
+    for (int i=0; i<ret->nspecies; i++) {
+        memcpy (ret->species[i].nu, config->species[i].nu, config->nspecies * sizeof (double));
+        memcpy (ret->species[i].name, config->species[i].name, 20 * sizeof (char));
+    }
+    return ret;
+}
+
+/**
  * @brief Print the current state to screen and to file
  * 
  * @param f_mesh 
@@ -127,7 +219,11 @@ void printState(
         }
     }
 
-    fprintf(fout, "%d %d\n", config->nspecies, config->nmarkers);
+    double dt = config->dt;
+    if (config->normalize) {
+        dt *= config->t0;
+    }
+    fprintf(fout, "%d %d %e\n", config->nspecies, config->nmarkers, dt);
     fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1], distmin);
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);
@@ -137,7 +233,11 @@ void printState(
     }
     for (int s=0; s<config->nspecies; s++) {
         for (int i=0; i<config->nmarkers; i++) {
-            fprintf(fout, "%d %d %e %e %e\n", s, i, p_mesh[s][i].z[0], p_mesh[s][i].z[1], f_mesh[s][i]);
+            Vector2d z = p_mesh[s][i].z;
+            if (config->normalize) {
+                z *= config->v0;
+            }
+            fprintf(fout, "%d %d %e %e %e\n", s, i, z(0), z(1), f_mesh[s][i]);
         }
     }
 
@@ -161,13 +261,25 @@ void printState(
  * @param config
  * @return double 
  */
-double f(Vector2d v, int specie, Config* config) {
+double f(Vector2d v, int s, Config* config) {
+    Specie specie = config->species[s];
     double ret = 0;
-    for (int i=0; i<config->species[specie].npeaks; i++) {
-        ret += exp(-(v-config->species[specie].peaks[i]).squaredNorm()/2.);
+    double m = specie.m;
+    double n = specie.n;
+    double Tx, Ty;
+
+    if (config->normalize) {
+        Tx = specie.Tx;
+        Ty = specie.Ty;
+    } else {
+        Tx = specie.Tx * CONST_E; // compute T in J
+        Ty = specie.Ty * CONST_E; // compute T in J
+    }
+    for (int i=0; i<specie.npeaks; i++) {
+        ret += exp(-(pow(v(0)-specie.peaks[i](0),2)/Tx + pow(v(1)-specie.peaks[i](1),2)/Ty) *m*0.5) / sqrt(Tx*Ty);
     }
 
-    ret *= pow(config->h,2)/(4.*CONST_PI);
+    ret *= n*(specie.ymax-specie.ymin)*(specie.xmax-specie.xmin)/(config->nx*config->ny)*m/(CONST_2PI);
     return ret;
 }
 
@@ -188,12 +300,15 @@ void mesh_distribution(
     for (int s=0; s<config->nspecies; s++) {
         for (int i=0; i<config->nmarkers; i++) {
             ret[s][i] = 0;
-            double CONST_2EPS_M1 = 1./(2.*config->eps);
-            double CONST_2PIEPS_M1 = 1./(CONST_2PI*config->eps);
+            double CONST_2EPS_M1 = 1./(2.*config->species[s].eps);
+            double CONST_2PIEPS_M1 = 1./(CONST_2PI*config->species[s].eps);
             for (int j=0; j<config->nmarkers; j++) {
                 ret[s][i] += exp(-(p_mesh[s][i].z - p[s][j].z).squaredNorm()*CONST_2EPS_M1)*p[s][j].weight;
             }
             ret[s][i] *= CONST_2PIEPS_M1;
+            if (config->normalize) {
+                ret[s][i] *= config->n0;
+            }
         }
     }
 }
@@ -215,34 +330,35 @@ double psi(Vector2d v, double eps) {
  * @param p 
  * @param config 
  */
-Particle2d* initMarkers(int specie, Config* config, DistributionType type) {
+Particle2d* initMarkers(int s, Config* config, DistributionType type) {
     int nmarkers = config->nmarkers;
     Particle2d* ret;
     ret = new Particle2d[config->nmarkers];
     int idx;
+    Specie specie = config->species[s];
     for (int i = 0; i<config->ny; i++) {
         for (int j = 0; j<config->nx; j++) {
             idx = i*config->nx + j;
             if (type == UNIFORM) {
-                ret[idx].z[0] = double(rand()) / RAND_MAX * (config->xmax - config->xmin) + config->xmin;
-                ret[idx].z[1] = double(rand()) / RAND_MAX * (config->ymax - config->ymin) + config->ymin;
+                ret[idx].z[0] = double(rand()) / RAND_MAX * (specie.xmax - specie.xmin) + specie.xmin;
+                ret[idx].z[1] = double(rand()) / RAND_MAX * (specie.ymax - specie.ymin) + specie.ymin;
             } else if (type == MESH) {
-                ret[idx].z[0] = double(j+0.5) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
-                ret[idx].z[1] = double(i+0.5) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
+                ret[idx].z[0] = double(j+0.5) / (config->nx) * (specie.xmax-specie.xmin) + specie.xmin;
+                ret[idx].z[1] = double(i+0.5) / (config->nx) * (specie.ymax-specie.ymin) + specie.ymin;
             } else if (type == MESH_SHIFT) {
                 double shift = 0;
-                if (specie == 1) {
+                if (s == 1) {
                     shift = 0.5;
                 }
-                ret[idx].z[0] = double(j+shift) / (config->nx) * (config->xmax-config->xmin) + config->xmin;
-                ret[idx].z[1] = double(i+shift) / (config->nx) * (config->ymax-config->ymin) + config->ymin;
+                ret[idx].z[0] = double(j+shift) / (config->nx) * (specie.xmax-specie.xmin) + specie.xmin;
+                ret[idx].z[1] = double(i+shift) / (config->nx) * (specie.ymax-specie.ymin) + specie.ymin;
             } else if (type == MESH_PEAK_CENTERED) {
                 double dx = 0.1;
-                Vector2d peak = config->species[specie].peaks[0];
-                ret[idx].z[0] = double(j+0.5) / (config->nx) * (config->xmax-config->xmin) + peak(0) - dx/2;
-                ret[idx].z[1] = double(i+0.5) / (config->ny) * (config->ymax-config->ymin) + peak(1) - dx/2;
+                Vector2d peak = specie.peaks[0];
+                ret[idx].z[0] = double(j+0.5) / (config->nx) * (specie.xmax-specie.xmin) + peak(0) - dx/2;
+                ret[idx].z[1] = double(i+0.5) / (config->ny) * (specie.ymax-specie.ymin) + peak(1) - dx/2;
             }
-            ret[idx].weight = f(ret[idx].z, specie, config);
+            ret[idx].weight = f(ret[idx].z, s, config);
         }
     }
     return ret;
@@ -438,11 +554,14 @@ double TemperatureSpecie(
         T += p[s][i].weight * (p[s][i].z - V).squaredNorm();
     }
     T *= 0.5 * config->species[s].m / rho;
+    if (config->normalize) {
+        T *= config->T0; // compute T in real units [eV]
+    }
     return T;
 }
 
 /**
- * @brief Compute the kinetic energy of a specie
+ * @brief Compute the kinetic energy of a specie [eV]
  * 
  * @param p 
  * @param s index of the specie
@@ -453,6 +572,9 @@ double Kspecie(Particle2d** p, int s, Config* config) {
     double ret = 0;
     for (int i = 0; i<config->nmarkers; i++) {
         ret += p[s][i].weight * config->species[s].m * 0.5 * p[s][i].z.squaredNorm();
+    }
+    if (config->normalize) {
+        ret *= config->n0 * CONST_ME * config->v0 * config->v0;
     }
     return ret;
 }
@@ -485,6 +607,9 @@ Vector2d MomentumSpecie(Particle2d** p, int s, Config* config) {
     for (int i=0; i<config->nmarkers; i++) {
         ret += p[s][i].weight * config->species[s].m * p[s][i].z;
     }
+    if (config->normalize) {
+        ret *= config->n0 * CONST_ME * config->v0;
+    }
     return ret;
 }
 
@@ -501,6 +626,61 @@ Vector2d Momentum(Particle2d** p, Config* config) {
         ret += MomentumSpecie(p, s, config);
     }
     return ret;
+}
+
+/**
+ * @brief Evaluate Coulomb logarithm.
+ *
+ * Coulomb logarithm is evaluated separately with respect to each plasma
+ * species. It is calculated as a logarithm of the ratio of maximum and
+ * minimum impact parameters. Maximum impact parameter is the Debye length
+ * and minimum impact parameter is classical particle radius
+ *
+ */
+double mccc_coefs_clog(int s1, int s2, Config* config) {
+
+    /* Evaluate Debye length */
+    double sum = 0;
+    for(int i = 0; i < config->nspecies; i++){
+        double qb = config->species[i].q;
+        sum += config->species[i].n * qb * qb / sqrt(config->species[i].Tx*config->species[i].Ty);
+    }
+    // printf("sum %e \n", sum);
+    double debyeLength = sqrt(CONST_E0*CONST_E/sum);
+
+    /* Evaluate classical impact parameter */
+    double va = config->species[s1].peaks[0].norm();
+    double qa = config->species[s1].q;
+    double qb = config->species[s2].q;
+    double Tb = sqrt(config->species[s2].Tx*config->species[s2].Ty); // [eV]
+    double ma = config->species[s1].m;
+    double mb = config->species[s2].m;
+    double vbar = va * va + 2 * Tb * CONST_E / mb;
+    double mr   = ma * mb / ( ma + mb );
+    double bcl  = fabs( qa * qb / ( 4*CONST_PI*CONST_E0 * mr * vbar ) );
+
+    return log( debyeLength / bcl );
+}
+
+/**
+ * @brief Evaluate collision parameter
+ *
+ *\f$c_{ab} = \frac{n_b q_a^2q_b^2 \ln\Lambda_{ab}}{4\pi\epsilon_0^2}\f$
+ *
+ * where
+ *
+ * - \f$q_a\f$ is test particle charge [C]
+ * - \f$q_b\f$ is plasma species charge [C]
+ * - \f$n_b\f$ is plasma species density [m^-3]
+ * - \f$\ln\Lambda_{ab}\f$ is Coulomb logarithm.
+ */
+double coefs_nu(int s1, int s2, Config* config) {
+    double qa = config->species[s1].q;
+    double qb = config->species[s1].q;
+    double clogab = mccc_coefs_clog(s1, s2, config);
+    printf("clogab %d %d %e\n", s1, s2, clogab);
+    return qa*qa * qb*qb * mccc_coefs_clog(s1, s2, config) / ( 8 * CONST_PI * CONST_E0*CONST_E0 );
+
 }
 
 }

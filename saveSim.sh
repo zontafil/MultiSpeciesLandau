@@ -16,19 +16,19 @@ cp main.cpp examples/$OUTFILE.cpp
 
 cp out/out.avi plots/$OUTFILE/$OUTFILE.avi
 
-cp out/EnergySpecies.png plots/$OUTFILE/png/${OUTFILE}_Energy.png
-cp out/EnergyError.png plots/$OUTFILE/png/${OUTFILE}_EnergySpecies.png
-cp out/minimumdist.png plots/$OUTFILE/png/${OUTFILE}_minimumdist.png
-cp out/P.png plots/$OUTFILE/png/${OUTFILE}_P.png
-cp out/PspeciesNorm.png plots/$OUTFILE/png/${OUTFILE}_PspeciesNorm.png
-cp out/TemperatureSpecies.png plots/$OUTFILE/png/${OUTFILE}_TemperatureSpecies.png
+cp out/EnergySpecies.png plots/$OUTFILE/png/Energy.png
+cp out/EnergyError.png plots/$OUTFILE/png/EnergySpecies.png
+cp out/minimumdist.png plots/$OUTFILE/png/minimumdist.png
+cp out/P.png plots/$OUTFILE/png/P.png
+cp out/PspeciesNorm.png plots/$OUTFILE/png/PspeciesNorm.png
+cp out/TemperatureSpecies.png plots/$OUTFILE/png/TemperatureSpecies.png
 
-cp out/EnergySpecies.eps plots/$OUTFILE/eps/${OUTFILE}_Energy.eps
-cp out/EnergyError.eps plots/$OUTFILE/eps/${OUTFILE}_EnergySpecies.eps
-cp out/minimumdist.eps plots/$OUTFILE/eps/${OUTFILE}_minimumdist.eps
-cp out/P.eps plots/$OUTFILE/eps/${OUTFILE}_P.eps
-cp out/PspeciesNorm.eps plots/$OUTFILE/eps/${OUTFILE}_PspeciesNorm.eps
-cp out/TemperatureSpecies.eps plots/$OUTFILE/eps/${OUTFILE}_TemperatureSpecies.eps
+cp out/EnergySpecies.eps plots/$OUTFILE/eps/Energy.eps
+cp out/EnergyError.eps plots/$OUTFILE/eps/EnergySpecies.eps
+cp out/minimumdist.eps plots/$OUTFILE/eps/minimumdist.eps
+cp out/P.eps plots/$OUTFILE/eps/P.eps
+cp out/PspeciesNorm.eps plots/$OUTFILE/eps/PspeciesNorm.eps
+cp out/TemperatureSpecies.eps plots/$OUTFILE/eps/TemperatureSpecies.eps
 
 mkdir -p savedData/$OUTFILE
 cp out/data/*.txt savedData/$OUTFILE/
