@@ -7,6 +7,7 @@ import cv2
 import os
 
 plt.figure(figsize=(6,6))
+plt.rcParams.update({'font.size': 18})
 
 def createDir(path):
     try: 
