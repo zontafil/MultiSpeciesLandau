@@ -5,9 +5,11 @@ import re
 import math
 import cv2
 import os
+from matplotlib.ticker import FormatStrFormatter
+import matplotlib.ticker as mtick
 
 plt.figure(figsize=(6,6))
-plt.rcParams.update({'font.size': 18})
+plt.rcParams.update({'font.size': 16})
 
 def createDir(path):
     try: 
@@ -123,17 +125,21 @@ plt.scatter(times, Eerr, s=0.5)
 plt.plot(times, Eerr)
 plt.xlabel("Time [s]")
 plt.ylabel("Energy Error")
+plt.gcf().subplots_adjust(left=0.15)
 plt.savefig("out/EnergyError.eps")
 plt.savefig("out/EnergyError.png")
 
+# plot system momentum and energy
+PerrNorm = np.sqrt(Perr[:,0]**2 + Perr[:,1]**2)
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-plt.scatter(times, distmin, s=0.5)
-plt.plot(times, distmin)
+plt.scatter(times, PerrNorm, s=0.5)
+plt.plot(times, Eerr)
 plt.xlabel("Time [s]")
-plt.ylabel("Minimum velocity distance")
-plt.savefig("out/minimumdist.eps")
-plt.savefig("out/minimumdist.png")
+plt.ylabel("|P| Error")
+plt.gcf().subplots_adjust(left=0.15)
+plt.savefig("out/PerrNorm.eps")
+plt.savefig("out/PerrNorm.png")
 
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
@@ -144,42 +150,51 @@ plt.ylabel("|P|")
 plt.savefig("out/P.eps")
 plt.savefig("out/P.png")
 
-# plot single species momentum and energy
+# plot single species energy
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 for s in range(0, nspecies):
     plt.scatter(times, Especies[s], label=specieNames[s], s=0.5)
     plt.plot(times, Especies[s])
-    plt.legend()
+legend = plt.legend()
+for s in range(0, nspecies):
+    legend.legendHandles[s]._sizes = [30]
 plt.xlabel("Time [s]")
 plt.ylabel("Total Energy [J]")
+plt.gcf().subplots_adjust(left=0.15)
+plt.ticklabel_format(axis='y', style='sci', scilimits=(3,4))
 plt.savefig("out/EnergySpecies.eps")
 plt.savefig("out/EnergySpecies.png")
 
-# plot single species temeperature
-plt.clf()
-plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-for s in range(0, nspecies):
-    plt.scatter(times, PSpeciesNorm[s], label=specieNames[s], s=0.5)
-    plt.plot(times, PSpeciesNorm[s])
-    plt.legend()
-plt.xlabel("Time [s]")
-plt.ylabel("|P|")
-plt.savefig("out/PspeciesNorm.eps")
-plt.savefig("out/PspeciesNorm.png")
+# plot single species P norm
+# plt.clf()
+# plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+# for s in range(0, nspecies):
+#     plt.scatter(times, PSpeciesNorm[s], label=specieNames[s], s=0.5)
+#     plt.plot(times, PSpeciesNorm[s])
+#     plt.legend()
+# plt.xlabel("Time [s]")
+# plt.ylabel("|P|")
+# # current_values = plt.gca().get_yticks()
+# # plt.gca().set_yticklabels(['{:e}'.format(x) for x in current_values])
+# plt.savefig("out/PspeciesNorm.eps")
+# plt.savefig("out/PspeciesNorm.png")
 
 # plot single species temeperature
-# plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 for s in range(0, nspecies):
     plt.scatter(times, Tspecies[s], label=specieNames[s], s=0.5)
     plt.plot(times, Tspecies[s])
-plt.legend()
+legend = plt.legend()
+for s in range(0, nspecies):
+    legend.legendHandles[s]._sizes = [30]
 # plt.ylim(bottom=0)
 plt.xlabel("Time [s]")
-# plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 plt.ylabel("Temperature [eV]")
+plt.gcf().subplots_adjust(left=0.15)
+current_values = plt.gca().get_yticks()
+plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
 plt.savefig("out/TemperatureSpecies.eps")
 plt.savefig("out/TemperatureSpecies.png")
 

@@ -27,7 +27,7 @@ cp out/EnergySpecies.eps plots/$OUTFILE/eps/Energy.eps
 cp out/EnergyError.eps plots/$OUTFILE/eps/EnergySpecies.eps
 cp out/minimumdist.eps plots/$OUTFILE/eps/minimumdist.eps
 cp out/P.eps plots/$OUTFILE/eps/P.eps
-cp out/PspeciesNorm.eps plots/$OUTFILE/eps/PspeciesNorm.eps
+# cp out/PspeciesNorm.eps plots/$OUTFILE/eps/PspeciesNorm.eps
 cp out/TemperatureSpecies.eps plots/$OUTFILE/eps/TemperatureSpecies.eps
 
 mkdir -p savedData/$OUTFILE
