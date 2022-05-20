@@ -266,11 +266,14 @@ double f(Vector2d v, int s, Config* config) {
     double ret = 0;
     double m = specie.m;
     double n = specie.n;
-    double Tx = specie.Tx * CONST_E; // compute T in Kelvin
-    double Ty = specie.Ty * CONST_E; // compute T in Kelvin
+    double Tx, Ty;
+
     if (config->normalize) {
         Tx = specie.Tx;
         Ty = specie.Ty;
+    } else {
+        Tx = specie.Tx * CONST_E; // compute T in J
+        Ty = specie.Ty * CONST_E; // compute T in J
     }
     for (int i=0; i<specie.npeaks; i++) {
         ret += exp(-(pow(v(0)-specie.peaks[i](0),2)/Tx + pow(v(1)-specie.peaks[i](1),2)/Ty) *m*0.5) / sqrt(Tx*Ty);
@@ -633,15 +636,6 @@ Vector2d Momentum(Particle2d** p, Config* config) {
  * minimum impact parameters. Maximum impact parameter is the Debye length
  * and minimum impact parameter is classical particle radius
  *
- * @param clogab array where evaluated values for Coulomb logarithm are stored.
- * @param ma test particle mass [kg]
- * @param qa test particle charge [C]
- * @param va test particle velocity [m/s]
- * @param nspec number of plasma species
- * @param mb plasma species masses [kg]
- * @param qb plasma species charges [C]
- * @param nb plasma species densities [m^-3]
- * @param Tb plasma species temperatures [J]
  */
 double mccc_coefs_clog(int s1, int s2, Config* config) {
 
@@ -649,19 +643,19 @@ double mccc_coefs_clog(int s1, int s2, Config* config) {
     double sum = 0;
     for(int i = 0; i < config->nspecies; i++){
         double qb = config->species[i].q;
-        sum += config->species[i].n * qb * qb / sqrt(config->species[i].Tx*config->species[i].Ty) * CONST_E0;
+        sum += config->species[i].n * qb * qb / sqrt(config->species[i].Tx*config->species[i].Ty);
     }
-    double debyeLength = sqrt(CONST_E0/sum);
+    // printf("sum %e \n", sum);
+    double debyeLength = sqrt(CONST_E0*CONST_E/sum);
 
-    /* Evaluate classical and quantum mechanical impact parameter. The one *
-     * that is larger is used to evaluate Coulomb logarithm.               */
-    double va = config->species[s1].peaks[0].squaredNorm();
+    /* Evaluate classical impact parameter */
+    double va = config->species[s1].peaks[0].norm();
     double qa = config->species[s1].q;
     double qb = config->species[s2].q;
-    double Tb = sqrt(config->species[s2].Tx*config->species[s2].Ty) * CONST_E0;
+    double Tb = sqrt(config->species[s2].Tx*config->species[s2].Ty); // [eV]
     double ma = config->species[s1].m;
     double mb = config->species[s2].m;
-    double vbar = va * va + 2 * Tb / mb;
+    double vbar = va * va + 2 * Tb * CONST_E / mb;
     double mr   = ma * mb / ( ma + mb );
     double bcl  = fabs( qa * qb / ( 4*CONST_PI*CONST_E0 * mr * vbar ) );
 
@@ -680,10 +674,13 @@ double mccc_coefs_clog(int s1, int s2, Config* config) {
  * - \f$n_b\f$ is plasma species density [m^-3]
  * - \f$\ln\Lambda_{ab}\f$ is Coulomb logarithm.
  */
-double mccc_coefs_cab(int s1, int s2, Config* config) {
+double coefs_nu(int s1, int s2, Config* config) {
     double qa = config->species[s1].q;
     double qb = config->species[s1].q;
+    double clogab = mccc_coefs_clog(s1, s2, config);
+    printf("clogab %d %d %e\n", s1, s2, clogab);
     return qa*qa * qb*qb * mccc_coefs_clog(s1, s2, config) / ( 8 * CONST_PI * CONST_E0*CONST_E0 );
+
 }
 
 }
