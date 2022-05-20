@@ -97,6 +97,7 @@ namespace Coulomb {
         double n0;
         double v0;
         double t0;
+        double T0;
 
         int nspecies;
         Specie* species;

@@ -151,6 +151,7 @@ Config* normalizeConfig(Config* config) {
     ret->n0 = n0;
     ret->v0 = v0;
     ret->t0 = t0;
+    ret->T0 = T0;
     
     return ret;
 }
@@ -551,7 +552,7 @@ double TemperatureSpecie(
     }
     T *= 0.5 * config->species[s].m / rho;
     if (config->normalize) {
-        T *= CONST_ME * config->v0 * config->v0 / CONST_E;
+        T *= config->T0; // compute T in real units [eV]
     }
     return T;
 }
