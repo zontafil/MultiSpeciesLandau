@@ -20,7 +20,7 @@ Coulomb::Config buildConfig() {
     config.nx = MARKERS_PER_DIM;
     config.ny = MARKERS_PER_DIM;
     config.distributionType = MESH_SHIFT;
-    config.recordAtStep = 50;
+    config.recordAtStep = 500;
 
     // initial peaks config
     Vector2d u1;
