@@ -54,7 +54,7 @@ void Run(Config* config0) {
 
     for (int t=0; t<config->n_timesteps; t++) {
 
-        print_out(VERBOSE_NORMAL, "Timestep: %d\n", t);
+        print_out(VERBOSE_NORMAL, "Timestep: %d Time: %e s\n", t, t*config0->dt);
 
         for (int s=0; s<config->nspecies; s++) {
             copy(p1[s], p1[s]+config->nmarkers, p0[s]);
@@ -198,7 +198,7 @@ void printState(
     // build distribution at mesh nodes and print to file
     mesh_distribution(f_mesh, p_mesh, p1, config);
     char filename[30];
-    snprintf (filename, sizeof filename, "out/data/step_C_%05d.txt", t);
+    snprintf (filename, sizeof filename, "out/data/step_C_%08d.txt", t);
     FILE* fout = fopen(filename, "w+");
 
     // print system state and debug info to screen
