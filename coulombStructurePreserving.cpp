@@ -556,6 +556,8 @@ double TemperatureSpecie(
     T *= 0.5 * config->species[s].m / rho;
     if (config->normalize) {
         T *= config->T0; // compute T in real units [eV]
+    } else {
+        T /= CONST_E;
     }
     return T;
 }
