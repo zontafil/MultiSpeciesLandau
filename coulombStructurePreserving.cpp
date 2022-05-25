@@ -225,11 +225,14 @@ void printState(
     }
     fprintf(fout, "%d %d %e\n", config->nspecies, config->nmarkers, dt);
     fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1], distmin);
+    double T, Tx, Ty;
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);
         P = MomentumSpecie(p1, s, config);
-        double T = TemperatureSpecie(p1, s, config);
-        fprintf(fout, "%e %e %e %e %s\n", E, P[0], P[1], T, config->species[s].name);
+        T = TemperatureSpecie(p1, s, config);
+        Tx = TemperatureSpecieSingleAxis(p1, s, 0, config);
+        Ty = TemperatureSpecieSingleAxis(p1, s, 1, config);
+        fprintf(fout, "%e %e %e %e %e %e %s\n", E, P[0], P[1], T, Tx, Ty, config->species[s].name);
     }
     for (int s=0; s<config->nspecies; s++) {
         for (int i=0; i<config->nmarkers; i++) {
@@ -523,6 +526,45 @@ double nSpecie(
         rho += p[s][i].weight;
     }
     return rho;
+}
+
+/**
+ * @brief Compute specie temperature of a single axis: 0.5*m*<(v-<v>)^2>
+ * 
+ * @param p 
+ * @param s 
+ * @param axis 
+ * @param config 
+ * @return double 
+ */
+double TemperatureSpecieSingleAxis(
+    Particle2d** p,
+    int s,
+    int axis,
+    Config* config
+) {
+    double T = 0;
+    double V = 0;
+
+    double rho = nSpecie(p, s, config);
+
+    // compute <v>
+    for (int i=0; i<config->nmarkers; i++) {
+        V += p[s][i].weight * p[s][i].z(axis);
+    }
+    V /= rho;
+
+    // compute Energy
+    for (int i=0; i<config->nmarkers; i++) {
+        T += p[s][i].weight * (p[s][i].z(axis) - V) * (p[s][i].z(axis) - V);
+    }
+    T *= config->species[s].m / rho;
+    if (config->normalize) {
+        T *= config->T0; // compute T in real units [eV]
+    } else {
+        T /= CONST_E;
+    }
+    return T;
 }
 
 /**

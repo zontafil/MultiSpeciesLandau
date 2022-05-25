@@ -47,6 +47,7 @@ Perr = np.zeros((len(files), 2))
 times = np.zeros(len(files))
 Especies = np.zeros((nspecies, len(files)))
 Tspecies = np.zeros((nspecies, len(files)))
+TspeciesAxes = np.zeros((nspecies, 2, len(files)))
 Pspecies = np.zeros((nspecies, 2, len(files)))
 specieNames = []
 
@@ -80,7 +81,9 @@ for file_i, filename in enumerate(files):
         Pspecies[s, 1, file_i] = float(line[2])
         PSpeciesNorm[s, file_i] = np.sqrt(Pspecies[s,0,file_i]**2 + Pspecies[s,1,file_i]**2)
         Tspecies[s, file_i] = float(line[3])
-        specieNames.append(line[4])
+        TspeciesAxes[s, 0, file_i] = float(line[4])
+        TspeciesAxes[s, 1, file_i] = float(line[5])
+        specieNames.append(line[6])
 
     # debug print
     if file_i == 0:
@@ -180,6 +183,25 @@ plt.savefig("out/EnergySpecies.png")
 # plt.savefig("out/PspeciesNorm.eps")
 # plt.savefig("out/PspeciesNorm.png")
 
+# plot single species temeperature separated for each axis
+plt.clf()
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+for s in range(0, nspecies):
+    plt.scatter(times, TspeciesAxes[s, 0], label=specieNames[s]+" x", s=0.5)
+    plt.plot(times, TspeciesAxes[s, 0])
+    plt.scatter(times, TspeciesAxes[s, 1], label=specieNames[s]+" y", s=0.5)
+    plt.plot(times, TspeciesAxes[s, 1])
+legend = plt.legend()
+for s in range(0, 2*nspecies):
+    legend.legendHandles[s]._sizes = [30]
+# plt.ylim(bottom=0)
+plt.xlabel("Time [s]")
+plt.ylabel("Temperature [eV]")
+plt.gcf().subplots_adjust(left=0.15)
+current_values = plt.gca().get_yticks()
+plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
+plt.savefig("out/TemperatureSpeciesAxes.eps")
+plt.savefig("out/TemperatureSpeciesAxes.png")
 # plot single species temeperature
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))

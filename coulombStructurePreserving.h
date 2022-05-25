@@ -41,6 +41,12 @@ namespace Coulomb {
         int s,
         Config* config
     );
+    double TemperatureSpecieSingleAxis(
+        Particle2d** p,
+        int s,
+        int axis,
+        Config* config
+    );
     double TemperatureSpecie(
         Particle2d** p,
         int s,
