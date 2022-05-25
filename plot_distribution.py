@@ -206,6 +206,26 @@ current_values = plt.gca().get_yticks()
 plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
 plt.savefig("out/TemperatureSpeciesAxes.eps")
 plt.savefig("out/TemperatureSpeciesAxes.png")
+
+# plot single species delta temeperature (log scale)
+if nspecies > 1:
+    plt.clf()
+    Tdelta = np.abs(Tspecies[0] - Tspecies[1])
+    offset = 200
+    print(len(Tdelta))
+    print("asd")
+    plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+    plt.scatter(times[offset:], Tdelta[offset:], s=0.5)
+    plt.plot(times[offset:], Tdelta[offset:])
+    plt.gca().set_yscale('log')
+    plt.xlabel("Time [s]")
+    plt.ylabel("Temperature [eV]")
+    plt.gcf().subplots_adjust(left=0.15)
+    current_values = plt.gca().get_yticks()
+    plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
+    plt.savefig("out/TemperatureSpeciesLog.eps")
+    plt.savefig("out/TemperatureSpeciesLog.png")
+
 # plot single species temeperature
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
