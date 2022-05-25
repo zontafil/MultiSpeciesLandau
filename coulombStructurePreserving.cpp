@@ -384,8 +384,13 @@ Particle2d* initOutputPrintMesh(Config* config) {
         ymin = fmin(ymin, config->species[s].ymin);
         xmax = fmax(xmax, config->species[s].xmax);
         ymax = fmax(ymax, config->species[s].ymax);
-        dx = fmin(dx, (config->species[s].xmax - config->species[s].xmin)/config->nx);
-        dy = fmin(dy, (config->species[s].ymax - config->species[s].ymin)/config->ny);
+        if (config->highResolutionMesh) {
+            dx = fmin(dx, (config->species[s].xmax - config->species[s].xmin)/config->nx);
+            dy = fmin(dy, (config->species[s].ymax - config->species[s].ymin)/config->ny);
+        } else {
+            dx = fmax(dx, (config->species[s].xmax - config->species[s].xmin)/config->nx);
+            dy = fmax(dy, (config->species[s].ymax - config->species[s].ymin)/config->ny);
+        }
     }
 
     int nx = (xmax - xmin) / dx;

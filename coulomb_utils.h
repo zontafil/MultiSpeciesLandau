@@ -27,7 +27,7 @@ using namespace Eigen;
 #define CONST_KB 1.3807e-23
 #define CONST_E 1.602176565e-19
 #define CONST_ME 9.1093837E-31
-#define CONST_MI 3.3435837724E-27
+#define CONST_MD 3.3435837724E-27 // deuteron mass
 
 /** @brief Electric constant [m^-3*kg^-1*s^4*A^2]                             */
 #define CONST_E0 8.8542e-12
@@ -80,6 +80,7 @@ namespace Coulomb {
         int ny;
         int nmarkers;
         int nmarkers_outputmesh;
+        int highResolutionMesh; // use the highest resolution for building the output plot mesh
         DistributionType distributionType;
         double dt;
         double dx;
