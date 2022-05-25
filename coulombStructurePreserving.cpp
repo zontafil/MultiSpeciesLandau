@@ -16,12 +16,11 @@ void Run(Config* config0) {
     } else {
         config = config0;
     }
-    Particle2d** p_mesh = new Particle2d*[config->nspecies];
+    Particle2d* p_mesh = initOutputPrintMesh(config);
     Particle2d** p0 = new Particle2d*[config->nspecies];
     Particle2d** p1 = new Particle2d*[config->nspecies];
     for (int i=0; i<config->nspecies; i++) {
         Specie specie = config->species[i];
-        p_mesh[i] = initMarkers(i, config, MESH);
         p0[i] = initMarkers(i, config, config->distributionType);
         p1[i] = initMarkers(i, config, config->distributionType);
         printf("Specie %d, n [1]: %e\n", i, nSpecie(p1, i, config));
@@ -35,15 +34,13 @@ void Run(Config* config0) {
         }
     }
 
-    
-
     // initial energy
     double E0 = K(p1, config), E;
     double** f_mesh = new double*[config->nspecies];
     Vector2d P0 = Momentum(p1, config), P;
     VectorXd* dSdV = new VectorXd[config->nspecies];
     for (int s=0; s<config->nspecies; s++) {
-        f_mesh[s] = new double[config->nmarkers];
+        f_mesh[s] = new double[config->nmarkers_outputmesh];
         dSdV[s] = VectorXd(2*config->nmarkers);
         print_out(VERBOSE_NORMAL, "Specie %d Epsilon: %e\n", s, config->species[s].eps);
     }
@@ -96,9 +93,9 @@ void Run(Config* config0) {
     for (int s=0; s<config->nspecies; s++) {
         free(p0[s]);
         free(p1[s]);
-        free(p_mesh[s]);
         free(f_mesh[s]);
     }
+    free(p_mesh);
 }
 
 /**
@@ -188,7 +185,7 @@ Config* copyConfig(Config* config) {
  */
 void printState(
     double** f_mesh,
-    Particle2d** p_mesh,
+    Particle2d* p_mesh,
     Particle2d** p1,
     Config* config,
     int t,
@@ -223,7 +220,7 @@ void printState(
     if (config->normalize) {
         dt *= config->t0;
     }
-    fprintf(fout, "%d %d %e\n", config->nspecies, config->nmarkers, dt);
+    fprintf(fout, "%d %d %d %e\n", config->nspecies, config->nmarkers, config->nmarkers_outputmesh, dt);
     fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1], distmin);
     double T, Tx, Ty;
     for (int s=0; s<config->nspecies; s++) {
@@ -235,15 +232,14 @@ void printState(
         fprintf(fout, "%e %e %e %e %e %e %s\n", E, P[0], P[1], T, Tx, Ty, config->species[s].name);
     }
     for (int s=0; s<config->nspecies; s++) {
-        for (int i=0; i<config->nmarkers; i++) {
-            Vector2d z = p_mesh[s][i].z;
+        for (int i=0; i<config->nmarkers_outputmesh; i++) {
+            Vector2d z = p_mesh[i].z;
             if (config->normalize) {
                 z *= config->v0;
             }
             fprintf(fout, "%d %d %e %e %e\n", s, i, z(0), z(1), f_mesh[s][i]);
         }
     }
-
 
     if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
         for (int s=0; s<config->nspecies; s++) {
@@ -296,17 +292,17 @@ double f(Vector2d v, int s, Config* config) {
  */
 void mesh_distribution(
     double** ret,
-    Particle2d** p_mesh,
+    Particle2d* p_mesh,
     Particle2d** p,
     Config* config
 ) {
     for (int s=0; s<config->nspecies; s++) {
-        for (int i=0; i<config->nmarkers; i++) {
+        for (int i=0; i<config->nmarkers_outputmesh; i++) {
             ret[s][i] = 0;
             double CONST_2EPS_M1 = 1./(2.*config->species[s].eps);
             double CONST_2PIEPS_M1 = 1./(CONST_2PI*config->species[s].eps);
             for (int j=0; j<config->nmarkers; j++) {
-                ret[s][i] += exp(-(p_mesh[s][i].z - p[s][j].z).squaredNorm()*CONST_2EPS_M1)*p[s][j].weight;
+                ret[s][i] += exp(-(p_mesh[i].z - p[s][j].z).squaredNorm()*CONST_2EPS_M1)*p[s][j].weight;
             }
             ret[s][i] *= CONST_2PIEPS_M1;
             if (config->normalize) {
@@ -347,14 +343,14 @@ Particle2d* initMarkers(int s, Config* config, DistributionType type) {
                 ret[idx].z[1] = double(rand()) / RAND_MAX * (specie.ymax - specie.ymin) + specie.ymin;
             } else if (type == MESH) {
                 ret[idx].z[0] = double(j+0.5) / (config->nx) * (specie.xmax-specie.xmin) + specie.xmin;
-                ret[idx].z[1] = double(i+0.5) / (config->nx) * (specie.ymax-specie.ymin) + specie.ymin;
+                ret[idx].z[1] = double(i+0.5) / (config->ny) * (specie.ymax-specie.ymin) + specie.ymin;
             } else if (type == MESH_SHIFT) {
                 double shift = 0;
                 if (s == 1) {
                     shift = 0.5;
                 }
                 ret[idx].z[0] = double(j+shift) / (config->nx) * (specie.xmax-specie.xmin) + specie.xmin;
-                ret[idx].z[1] = double(i+shift) / (config->nx) * (specie.ymax-specie.ymin) + specie.ymin;
+                ret[idx].z[1] = double(i+shift) / (config->ny) * (specie.ymax-specie.ymin) + specie.ymin;
             } else if (type == MESH_PEAK_CENTERED) {
                 double dx = 0.1;
                 Vector2d peak = specie.peaks[0];
@@ -362,6 +358,51 @@ Particle2d* initMarkers(int s, Config* config, DistributionType type) {
                 ret[idx].z[1] = double(i+0.5) / (config->ny) * (specie.ymax-specie.ymin) + peak(1) - dx/2;
             }
             ret[idx].weight = f(ret[idx].z, s, config);
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Init the mesh used to print the global output distribution used for plotting
+ * The mesh covers all specie meshes and has the resolution of the mesh with the highest resolution
+ * 
+ * @param config 
+ * @return Particle2d* 
+ */
+Particle2d* initOutputPrintMesh(Config* config) {
+
+    // find limits of the mesh, find the largest limit of the species with the lowest separation
+    double xmin = config->species[0].xmin;
+    double xmax = config->species[0].xmax;
+    double ymin = config->species[0].ymin;
+    double ymax = config->species[0].ymax;
+    double dx = (xmax - xmin) / config->nx;
+    double dy = (ymax - ymin) / config->ny;
+    for (int s=1; s<config->nspecies; s++) {
+        xmin = fmin(xmin, config->species[s].xmin);
+        ymin = fmin(ymin, config->species[s].ymin);
+        xmax = fmax(xmax, config->species[s].xmax);
+        ymax = fmax(ymax, config->species[s].ymax);
+        dx = fmin(dx, (config->species[s].xmax - config->species[s].xmin)/config->nx);
+        dy = fmin(dy, (config->species[s].ymax - config->species[s].ymin)/config->ny);
+    }
+
+    int nx = (xmax - xmin) / dx;
+    int ny = (ymax - ymin) / dy;
+    int nmarkers = nx*ny;
+    config->nmarkers_outputmesh = nmarkers;
+
+    printf("INIT OUTPUT MESH: %d %d %e %e %e\n", nx, ny, xmin, xmax, dx);
+
+    Particle2d* ret;
+    ret = new Particle2d[nmarkers];
+    int idx;
+    for (int i = 0; i<ny; i++) {
+        for (int j = 0; j<nx; j++) {
+            idx = i*nx + j;
+            ret[idx].z[0] = double(j+0.5) / nx * (xmax-xmin) + xmin;
+            ret[idx].z[1] = double(i+0.5) / ny * (ymax-ymin) + ymin;
         }
     }
     return ret;

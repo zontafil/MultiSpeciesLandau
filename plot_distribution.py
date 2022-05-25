@@ -30,9 +30,9 @@ fmax = np.zeros(nspecies)
 for filename in files:
     file = open(filename, "r")
     lines = file.readlines()
-    n = int(math.sqrt(float(lines[0].strip().split(" ")[1])))
+    n = int(math.sqrt(float(lines[0].strip().split(" ")[2])))
     nspecies = int(lines[0].strip().split(" ")[0])
-    dt = float(lines[0].strip().split(" ")[2])
+    dt = float(lines[0].strip().split(" ")[3])
     for s in range(nspecies):
         for i in range(2+nspecies+s*n*n, s*n*n+n*n):
             fmax[s] = max(fmax[s], float(lines[i].strip().split(" ")[4]))
@@ -56,7 +56,8 @@ for file_i, filename in enumerate(files):
     t = int(matches[0])
     file = open(filename, "r")
     lines = file.readlines()
-    n = int(math.sqrt(float(lines[0].strip().split(" ")[1])))
+    n = int(math.sqrt(float(lines[0].strip().split(" ")[2])))
+    nMarkersPerDim = int(math.sqrt(float(lines[0].strip().split(" ")[1])))
     idx = np.zeros([nspecies, n*n])
     vx = np.zeros([nspecies, n*n])
     vy = np.zeros([nspecies, n*n])
@@ -89,6 +90,7 @@ for file_i, filename in enumerate(files):
     if file_i == 0:
         print("nspecies {}".format(nspecies))
         print("n {}".format(n))
+        print("n Markers/Dim {}".format(nMarkersPerDim))
     if file_i % 20 == 0:
         print(filename)
 

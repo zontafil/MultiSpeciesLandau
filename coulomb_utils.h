@@ -79,6 +79,7 @@ namespace Coulomb {
         int nx;
         int ny;
         int nmarkers;
+        int nmarkers_outputmesh;
         DistributionType distributionType;
         double dt;
         double dx;
