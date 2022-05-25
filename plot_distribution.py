@@ -111,7 +111,9 @@ for file_i, filename in enumerate(files):
     colourMaps = ["viridis", "inferno", "viridis", "summer"]
     alphas = [0.6, 0.6]
     resolutions = [20, 20]
-    vmaxes = [fmax[0]/2, fmax[1]]
+    vmaxes = [fmax[0]/2]
+    if nspecies > 1:
+        vmaxes.append(fmax[1])
     for i in range(nspecies):
         plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), resolutions[i], vmax=vmaxes[i], alpha=alphas[i], cmap=colourMaps[i])
     imgname = 'out/data/plot_C_' + str(t+1).zfill(6) + '.png'
