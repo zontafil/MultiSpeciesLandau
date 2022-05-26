@@ -49,16 +49,22 @@ void Run(Config* config0) {
     print_out(VERBOSE_NORMAL, "Initial Energy [eV]: %e\n", E0);
     print_out(VERBOSE_NORMAL, "Initial Momentum: %e %e\n", P0[0], P0[1]);
 
-    for (int t=0; t<config->n_timesteps; t++) {
+    double t = 0;
+    int nsteps = 0, ETA;
+    time_t cpuTime0 = time(NULL);
+    char ETAstring[100];
+    while (t<=config0->t1) {
 
-        print_out(VERBOSE_NORMAL, "Timestep: %d Time: %e s\n", t, t*config0->dt);
+        ETA = (time(NULL) - cpuTime0) * (config->t1/t - 1.);
+        format_duration(ETA, ETAstring);
+        print_out(VERBOSE_NORMAL, "Timestep: %d Time: %e s ETA: %s\n", nsteps, t, ETAstring);
 
         for (int s=0; s<config->nspecies; s++) {
             copy(p1[s], p1[s]+config->nmarkers, p0[s]);
         }
 
-        if (t%config->recordAtStep == 0) {
-            printState(f_mesh, p_mesh, p1, config, t, E0, P0);
+        if (nsteps%config->recordAtStep == 0) {
+            printState(f_mesh, p_mesh, p1, config, nsteps, E0, P0);
         }
 
         // precompute entropy gradient
@@ -86,9 +92,12 @@ void Run(Config* config0) {
                 }
             }
         }
+
+        t += config0->dt;
+        nsteps++;
     }
 
-    printState(f_mesh, p_mesh, p1, config, config->n_timesteps, E0, P0);
+    printState(f_mesh, p_mesh, p1, config, nsteps, E0, P0);
 
     for (int s=0; s<config->nspecies; s++) {
         free(p0[s]);
@@ -771,6 +780,13 @@ double coefs_nu(int s1, int s2, Config* config) {
     printf("clogab %d %d %e\n", s1, s2, clogab);
     return qa*qa * qb*qb * mccc_coefs_clog(s1, s2, config) / ( 8 * CONST_PI * CONST_E0*CONST_E0 );
 
+}
+
+void format_duration(int seconds, char* ret) {
+    int minutes = (int) ((seconds / (60)) % 60);
+    int hours   = (int) ((seconds / (60*60)) % 24);
+
+    sprintf(ret, "%d Hours, %d Minutes, %d Seconds", hours, minutes, seconds%60);
 }
 
 }

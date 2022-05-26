@@ -66,4 +66,5 @@ namespace Coulomb {
     );
     double mccc_coefs_clog(int s1, int s2, Config* config);
     double coefs_nu(int s1, int s2, Config* config);
+    void format_duration(int milliseconds, char* ret);
 }

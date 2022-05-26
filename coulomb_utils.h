@@ -8,6 +8,7 @@ typedef double real;  /**< Double precision float   */
 #include <iomanip>
 #include <limits>
 #include <stdio.h>
+#include <time.h>
 
 #ifdef INTELLISENSE
 #include <eigen3/Eigen/Dense> // global installation
@@ -84,7 +85,7 @@ namespace Coulomb {
         DistributionType distributionType;
         double dt;
         double dx;
-        int n_timesteps;
+        double t1;
         double newtonTolerance;
         int useNewton;
         int maxEOMIterations;
