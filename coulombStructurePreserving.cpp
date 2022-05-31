@@ -209,34 +209,27 @@ void printState(
     double E = K(p1, config);
     print_out(VERBOSE_NORMAL, "Energy: %.15e Error: %.15e\n", E, (E-E0)/E0);
 
-    Vector2d P = Momentum(p1, config);
+    Vector2d P = Momentum(p1, config), V;
     print_out(VERBOSE_NORMAL, "Momentum: %.15e %.15e\n", P[0], P[1]);
     print_out(VERBOSE_NORMAL, "Momentum Error: %.15e %.15e\n", (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1]);
-
-    double distmin = 1000000;
-    for (int s1=0; s1<config->nspecies; s1++)
-    for (int i1=0; i1<config->nmarkers; i1++)
-    for (int s2=0; s2<config->nspecies; s2++)
-    for (int i2=0; i2<config->nmarkers; i2++) {
-        if (i1!=i2 || s1!=s2) {
-            distmin = min(distmin, (p1[s1][i1].z - p1[s2][i2].z).norm());
-        }
-    }
 
     double dt = config->dt;
     if (config->normalize) {
         dt *= config->t0;
     }
     fprintf(fout, "%d %d %d %e\n", config->nspecies, config->nmarkers, config->nmarkers_outputmesh, dt);
-    fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1], distmin);
+    fprintf(fout, "%e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0]), (P[1]-P0[1]));
     double T, Tx, Ty;
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);
-        P = MomentumSpecie(p1, s, config);
+        V = averageVelocitySpecie(p1, s, config);
         T = TemperatureSpecie(p1, s, config);
         Tx = TemperatureSpecieSingleAxis(p1, s, 0, config);
         Ty = TemperatureSpecieSingleAxis(p1, s, 1, config);
-        fprintf(fout, "%e %e %e %e %e %e %s\n", E, P[0], P[1], T, Tx, Ty, config->species[s].name);
+        if (config->normalize) {
+            V *= config->v0;
+        }
+        fprintf(fout, "%e %e %e %e %e %e %s\n", E, V[0], V[1], T, Tx, Ty, config->species[s].name);
     }
     for (int s=0; s<config->nspecies; s++) {
         for (int i=0; i<config->nmarkers_outputmesh; i++) {
@@ -621,6 +614,29 @@ double TemperatureSpecieSingleAxis(
 }
 
 /**
+ * @brief Compute the average velocity (flow) of a specie
+ * 
+ * @param p 
+ * @param s 
+ * @param config 
+ * @return Vector2d 
+ */
+Vector2d averageVelocitySpecie(
+    Particle2d** p,
+    int s,
+    Config* config
+) {
+    Vector2d V(0,0);
+    double rho = nSpecie(p, s, config);
+    for (int i=0; i<config->nmarkers; i++) {
+        V += p[s][i].weight * p[s][i].z;
+    }
+    V /= rho;
+
+    return V;
+}
+
+/**
  * @brief Compute specie temperature: 0.5*m*<(v-<v>)^2>
  * 
  * @param p 
@@ -634,15 +650,8 @@ double TemperatureSpecie(
     Config* config
 ) {
     double T = 0;
-    Vector2d V(0,0);
-
     double rho = nSpecie(p, s, config);
-
-    // compute <v>
-    for (int i=0; i<config->nmarkers; i++) {
-        V += p[s][i].weight * p[s][i].z;
-    }
-    V /= rho;
+    Vector2d V = averageVelocitySpecie(p, s, config);
 
     // compute Energy
     for (int i=0; i<config->nmarkers; i++) {

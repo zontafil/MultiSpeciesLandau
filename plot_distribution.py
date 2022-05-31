@@ -39,7 +39,6 @@ for filename in files:
 
 E = np.zeros(len(files))
 Eerr = np.zeros(len(files))
-distmin = np.zeros(len(files))
 P = np.zeros((len(files), 2))
 Pnorm = np.zeros(len(files))
 PSpeciesNorm = np.zeros((nspecies, len(files)))
@@ -73,7 +72,6 @@ for file_i, filename in enumerate(files):
     Pnorm[file_i] = np.sqrt(float(line[3])**2 + float(line[2])**2)
     Perr[file_i,0] = float(line[4])
     Perr[file_i,1] = float(line[5])
-    distmin[file_i] = float(line[6])
     times[file_i] = t
     for s in range(nspecies):
         line = lines[2+s].strip().split(" ")
@@ -141,7 +139,7 @@ PerrNorm = np.sqrt(Perr[:,0]**2 + Perr[:,1]**2)
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 plt.scatter(times, PerrNorm, s=0.5)
-plt.plot(times, Eerr)
+plt.plot(times, PerrNorm)
 plt.xlabel("Time [s]")
 plt.ylabel("|P| Error")
 plt.gcf().subplots_adjust(left=0.15)
@@ -156,6 +154,27 @@ plt.xlabel("Time [s]")
 plt.ylabel("|P|")
 plt.savefig("out/P.eps")
 plt.savefig("out/P.png")
+
+# plot single species momentum separated for each axis
+plt.clf()
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+plt.ticklabel_format(style='sci', axis='y', scilimits=(0,2))
+for s in range(0, nspecies):
+    plt.scatter(times, Pspecies[s, 0], label=specieNames[s]+" x", s=0.5)
+    plt.plot(times, Pspecies[s, 0])
+    plt.scatter(times, Pspecies[s, 1], label=specieNames[s]+" y", s=0.5)
+    plt.plot(times, Pspecies[s, 1])
+legend = plt.legend()
+for s in range(0, 2*nspecies):
+    legend.legendHandles[s]._sizes = [30]
+# plt.ylim(bottom=0)
+plt.xlabel("Time [s]")
+plt.ylabel("P [kg m/s]")
+plt.gcf().subplots_adjust(left=0.15)
+current_values = plt.gca().get_yticks()
+# plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
+plt.savefig("out/Vaxes.eps")
+plt.savefig("out/Vaxes.png")
 
 # plot single species energy
 plt.clf()
@@ -211,7 +230,7 @@ plt.savefig("out/TemperatureSpeciesAxes.png")
 if nspecies > 1:
     plt.clf()
     Tdelta = np.abs(Tspecies[0] - Tspecies[1])
-    offset = 200
+    offset = 10
     print(len(Tdelta))
     print("asd")
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
