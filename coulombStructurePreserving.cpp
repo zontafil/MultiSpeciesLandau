@@ -124,8 +124,7 @@ Config* normalizeConfig(Config* config) {
         n0 = fmax(n0, ret->species[s].n);
     }
     v0 /= 10.; // make the box = [-10,10]
-    double nu0 = CONST_E * CONST_E * CONST_E * CONST_E / (8. * CONST_PI * CONST_E0 * CONST_E0);
-    nu0 *= mccc_coefs_clog(0, 0, config);
+    double nu0 = coefs_nu(0, 0, config);
     printf("NU0 %e\n", nu0);
     double t0 = v0 * v0 * v0 * CONST_ME * CONST_ME / (n0 * nu0);
     ret->dt /= t0;
@@ -147,7 +146,6 @@ Config* normalizeConfig(Config* config) {
         ret->species[s].ymax /= v0;
         for (int i=0; i<ret->nspecies; i++) {
             ret->species[s].nu[i] /= nu0;
-            ret->species[s].nu[i] = 1.; // FIXME ====
         }
         for (int i=0; i<ret->species[s].npeaks; i++) {
             ret->species[s].peaks[i] /= v0;
