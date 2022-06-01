@@ -15,6 +15,11 @@ void Run(Config* config0) {
         config = normalizeConfig(config0);
     } else {
         config = config0;
+        config->n0 = 1.;
+        config->v0 = 1.;
+        config->t0 = 1.;
+        config->T0 = 1.;
+        config->nu0 = 1.;
     }
     Particle2d* p_mesh = initOutputPrintMesh(config);
     Particle2d** p0 = new Particle2d*[config->nspecies];
@@ -128,6 +133,7 @@ Config* normalizeConfig(Config* config) {
     printf("NU0 %e\n", nu0);
     double t0 = v0 * v0 * v0 * CONST_ME * CONST_ME / (n0 * nu0);
     ret->dt /= t0;
+    ret->t1 /= t0;
 
     // double T0x = ret->species[0].Tx; // use first specie T as base for normalization
     // double T0y = ret->species[0].Ty; // use first specie T as base for normalization
@@ -156,6 +162,7 @@ Config* normalizeConfig(Config* config) {
     ret->v0 = v0;
     ret->t0 = t0;
     ret->T0 = T0;
+    ret->nu0 = nu0;
     
     return ret;
 }
@@ -169,6 +176,7 @@ Config* normalizeConfig(Config* config) {
 Config* copyConfig(Config* config) {
     Config* ret = (Config*)malloc(sizeof(Config));
     memcpy (ret, config, sizeof (Config));
+    ret->species = new Specie[config->nspecies];
     memcpy (ret->species, config->species, config->nspecies * sizeof (Specie));
     memcpy (ret->kHermite, config->kHermite, config->nHermite * sizeof (double));
     memcpy (ret->wHermite, config->wHermite, config->nHermite * sizeof (double));
@@ -784,7 +792,6 @@ double coefs_nu(int s1, int s2, Config* config) {
     double qa = config->species[s1].q;
     double qb = config->species[s1].q;
     double clogab = mccc_coefs_clog(s1, s2, config);
-    printf("clogab %d %d %e\n", s1, s2, clogab);
     return qa*qa * qb*qb * mccc_coefs_clog(s1, s2, config) / ( 8 * CONST_PI * CONST_E0*CONST_E0 );
 
 }
