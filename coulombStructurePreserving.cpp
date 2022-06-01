@@ -53,6 +53,7 @@ void Run(Config* config0) {
     print_out(VERBOSE_NORMAL, "Markers: %d dT: %e\n", config->nmarkers, config->dt);
     print_out(VERBOSE_NORMAL, "Initial Energy [eV]: %e\n", E0);
     print_out(VERBOSE_NORMAL, "Initial Momentum: %e %e\n", P0[0], P0[1]);
+    print_out(VERBOSE_NORMAL, "Thermalization time: %e s\n", thermalizationTime(config0));
 
     double t = 0;
     int nsteps = 0, ETA;
@@ -60,7 +61,7 @@ void Run(Config* config0) {
     char ETAstring[100];
     while (t<=config0->t1) {
 
-        ETA = (time(NULL) - cpuTime0) * (config->t1/t - 1.);
+        ETA = (time(NULL) - cpuTime0) * (config0->t1/t - 1.);
         format_duration(ETA, ETAstring);
         print_out(VERBOSE_NORMAL, "Timestep: %d Time: %e s ETA: %s\n", nsteps, t, ETAstring);
 
@@ -69,7 +70,7 @@ void Run(Config* config0) {
         }
 
         if (nsteps%config->recordAtStep == 0) {
-            printState(f_mesh, p_mesh, p1, config, nsteps, E0, P0);
+            printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0);
         }
 
         // precompute entropy gradient
@@ -102,7 +103,7 @@ void Run(Config* config0) {
         nsteps++;
     }
 
-    printState(f_mesh, p_mesh, p1, config, nsteps, E0, P0);
+    printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0);
 
     for (int s=0; s<config->nspecies; s++) {
         free(p0[s]);
@@ -203,6 +204,7 @@ void printState(
     Particle2d* p_mesh,
     Particle2d** p1,
     Config* config,
+    Config* config0,
     int t,
     double E0,
     Vector2d P0
@@ -221,12 +223,19 @@ void printState(
     print_out(VERBOSE_NORMAL, "Momentum: %.15e %.15e\n", P[0], P[1]);
     print_out(VERBOSE_NORMAL, "Momentum Error: %.15e %.15e\n", (P[0]-P0[0])/P0[0], (P[1]-P0[1])/P0[1]);
 
+    double thermalAnalytic, thermalTime, Ta, Tb;
+    thermalTime = thermalizationTime(config0);
+    Ta = sqrt(config0->species[0].Tx*config0->species[0].Ty);
+    Tb = sqrt(config0->species[1].Tx*config0->species[1].Ty);
+    printf("portanna %e\n", (Ta-Tb)/2.);
+    thermalAnalytic = (Ta+Tb)/2. + (Ta-Tb)/2.* exp(-2.*t*config0->dt/thermalTime);
+
     double dt = config->dt;
     if (config->normalize) {
         dt *= config->t0;
     }
     fprintf(fout, "%d %d %d %e\n", config->nspecies, config->nmarkers, config->nmarkers_outputmesh, dt);
-    fprintf(fout, "%e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0]), (P[1]-P0[1]));
+    fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0]), (P[1]-P0[1]), thermalAnalytic);
     double T, Tx, Ty;
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);
@@ -794,6 +803,25 @@ double coefs_nu(int s1, int s2, Config* config) {
     double clogab = mccc_coefs_clog(s1, s2, config);
     return qa*qa * qb*qb * mccc_coefs_clog(s1, s2, config) / ( 8 * CONST_PI * CONST_E0*CONST_E0 );
 
+}
+
+double thermalizationTime(Config* config) {
+    if (config->nspecies != 2) {
+        print_out(VERBOSE_NORMAL, "Thermalization time not available with nspecies != 2\n");
+        return 0;
+    }
+    double ma = config->species[0].m;
+    double mb = config->species[1].m;
+    double Ta = sqrt(config->species[0].Tx*config->species[0].Ty);
+    double Tb = sqrt(config->species[1].Tx*config->species[1].Ty);
+    double TaK = Ta * CONST_E / CONST_KB;
+    double TbK = Tb * CONST_E / CONST_KB;
+    double mt = sqrt(ma*Tb + mb*Ta);
+    double mu = 2.;
+    double na = config->species[0].n * 1E-6; // n_a in cm^-3
+    double l = mccc_coefs_clog(0, 1, config);
+    return (mt*mt*mt) /
+            (1.8E-19 * sqrt(ma*mb)* na * l);
 }
 
 void format_duration(int seconds, char* ret) {

@@ -60,6 +60,7 @@ namespace Coulomb {
         Particle2d* p_mesh,
         Particle2d** p1,
         Config* config,
+        Config* config0,
         int t,
         double E0,
         Vector2d P0
@@ -72,4 +73,5 @@ namespace Coulomb {
         int s,
         Config* config
     );
+    double thermalizationTime(Config* config);
 }

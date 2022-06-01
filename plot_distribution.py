@@ -44,6 +44,7 @@ Pnorm = np.zeros(len(files))
 PSpeciesNorm = np.zeros((nspecies, len(files)))
 Perr = np.zeros((len(files), 2))
 times = np.zeros(len(files))
+thermalAnalytic = np.zeros(len(files))
 Especies = np.zeros((nspecies, len(files)))
 Tspecies = np.zeros((nspecies, len(files)))
 TspeciesAxes = np.zeros((nspecies, 2, len(files)))
@@ -72,6 +73,7 @@ for file_i, filename in enumerate(files):
     Pnorm[file_i] = np.sqrt(float(line[3])**2 + float(line[2])**2)
     Perr[file_i,0] = float(line[4])
     Perr[file_i,1] = float(line[5])
+    thermalAnalytic[file_i] = float(line[6])
     times[file_i] = t
     for s in range(nspecies):
         line = lines[2+s].strip().split(" ")
@@ -122,8 +124,9 @@ for file_i, filename in enumerate(files):
 createDir("./plots/eps")
 createDir("./plots/png")
 
-# plot system momentum and energy
 times = times * dt
+
+# plot system momentum and energy
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 plt.scatter(times, Eerr, s=0.5)
@@ -254,14 +257,33 @@ for s in range(0, nspecies):
 legend = plt.legend()
 for s in range(0, nspecies):
     legend.legendHandles[s]._sizes = [30]
-# plt.ylim(bottom=0)
+plt.xlabel("Time [s]")
+plt.ylabel("Temperature [eV]")
+plt.gcf().subplots_adjust(left=0.15)
+current_values = plt.gca().get_yticks()
+# plt.gca().set_yticklabels(['{:.4f}'.format(x) for x in current_values])
+plt.savefig("out/TemperatureSpecies.eps")
+plt.savefig("out/TemperatureSpecies.png")
+
+# plot single species temeperature
+plt.clf()
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+for s in range(0, nspecies):
+    plt.scatter(times, Tspecies[s], label=specieNames[s], s=0.5)
+    plt.plot(times, Tspecies[s])
+plt.scatter(times, thermalAnalytic, label="Analytic", s=0.5)
+plt.plot(times, thermalAnalytic)
+legend = plt.legend()
+for s in range(0, nspecies):
+    legend.legendHandles[s]._sizes = [30]
+legend.legendHandles[nspecies]._sizes = [30]
 plt.xlabel("Time [s]")
 plt.ylabel("Temperature [eV]")
 plt.gcf().subplots_adjust(left=0.15)
 current_values = plt.gca().get_yticks()
 plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
-plt.savefig("out/TemperatureSpecies.eps")
-plt.savefig("out/TemperatureSpecies.png")
+plt.savefig("out/TemperatureSpeciesAnalytic.eps")
+plt.savefig("out/TemperatureSpeciesAnalytic.png")
 
 img_array = []
 size = (0,0)
