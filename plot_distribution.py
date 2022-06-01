@@ -132,19 +132,21 @@ plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 plt.scatter(times, Eerr, s=0.5)
 plt.plot(times, Eerr)
 plt.xlabel("Time [s]")
-plt.ylabel("Energy Error")
+plt.ylabel("(E-E0)/E0")
 plt.gcf().subplots_adjust(left=0.15)
 plt.savefig("out/EnergyError.eps")
 plt.savefig("out/EnergyError.png")
 
 # plot system momentum and energy
+# Perr = Perr / P
 PerrNorm = np.sqrt(Perr[:,0]**2 + Perr[:,1]**2)
+PerrNorm = PerrNorm / Pnorm
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 plt.scatter(times, PerrNorm, s=0.5)
 plt.plot(times, PerrNorm)
 plt.xlabel("Time [s]")
-plt.ylabel("|P| Error")
+plt.ylabel("|P - P0|/|P0|")
 plt.gcf().subplots_adjust(left=0.15)
 plt.savefig("out/PerrNorm.eps")
 plt.savefig("out/PerrNorm.png")
