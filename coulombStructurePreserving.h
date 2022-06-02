@@ -74,4 +74,5 @@ namespace Coulomb {
         Config* config
     );
     double thermalizationTime(Config* config);
+    double getTime();
 }

@@ -103,6 +103,11 @@ namespace Coulomb {
         double T0;
         double nu0;
 
+        // benchmark times
+        double time_dsdv;
+        double time_eqmotion;
+        double time_total;
+
         int nspecies;
         Specie* species;
 

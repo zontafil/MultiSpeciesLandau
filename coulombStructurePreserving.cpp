@@ -59,6 +59,9 @@ void Run(Config* config0) {
     int nsteps = 0, ETA;
     time_t cpuTime0 = time(NULL);
     char ETAstring[100];
+    config->time_dsdv = 0;
+    config->time_eqmotion = 0;
+    config->time_total = -getTime();
     while (t<=config0->t1) {
 
         ETA = (time(NULL) - cpuTime0) * (config0->t1/t - 1.);
@@ -74,7 +77,9 @@ void Run(Config* config0) {
         }
 
         // precompute entropy gradient
+        config->time_dsdv -= getTime();
         Kernel::computedSdv(dSdV, p0, config);
+        config->time_dsdv += getTime();
         if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
             cout << "==== dSdV" << endl;
             for (int s=0; s<config->nspecies; s++) {
@@ -86,6 +91,7 @@ void Run(Config* config0) {
         }
 
         // fixed point newton iterations
+        config->time_eqmotion -= getTime();
         for (int j=0; j<config->maxEOMIterations; j++) {
             print_out(VERBOSE_DEBUG, "Iteration %d ", j);
             if (config->useNewton) {
@@ -98,10 +104,18 @@ void Run(Config* config0) {
                 }
             }
         }
+        config->time_eqmotion += getTime();
 
         t += config0->dt;
         nsteps++;
     }
+    config->time_total += getTime();
+    config->time_total *= config->dt / config->t1;
+    config->time_eqmotion *= config->dt / config->t1;
+    config->time_dsdv *= config->dt / config->t1;
+    FILE* benchOut = fopen("benchmarks.txt", "a+");
+    
+    fprintf(benchOut, "%d %f %f %f\n", config->nx, config->time_total, config->time_dsdv, config->time_eqmotion);
 
     printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0);
 
@@ -227,7 +241,6 @@ void printState(
     thermalTime = thermalizationTime(config0);
     Ta = sqrt(config0->species[0].Tx*config0->species[0].Ty);
     Tb = sqrt(config0->species[1].Tx*config0->species[1].Ty);
-    printf("portanna %e\n", (Ta-Tb)/2.);
     thermalAnalytic = (Ta+Tb)/2. + (Ta-Tb)/2.* exp(-2.*t*config0->dt/thermalTime);
 
     double dt = config->dt;
@@ -829,6 +842,17 @@ void format_duration(int seconds, char* ret) {
     int hours   = (int) ((seconds / (60*60)) % 24);
 
     sprintf(ret, "%d Hours, %d Minutes, %d Seconds", hours, minutes, seconds%60);
+}
+
+/**
+ * @brief milliseconds since epoch
+ * 
+ * @return double 
+ */
+double getTime() {
+    struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+    return (spec.tv_sec*1000 + spec.tv_nsec * 1E-6);
 }
 
 }
