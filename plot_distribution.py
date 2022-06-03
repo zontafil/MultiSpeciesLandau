@@ -33,9 +33,10 @@ for filename in files:
     n = int(math.sqrt(float(lines[0].strip().split(" ")[2])))
     nspecies = int(lines[0].strip().split(" ")[0])
     dt = float(lines[0].strip().split(" ")[3])
-    for s in range(nspecies):
-        for i in range(2+nspecies+s*n*n, s*n*n+n*n):
-            fmax[s] = max(fmax[s], float(lines[i].strip().split(" ")[4]))
+    if len(lines) > 2+nspecies:
+        for s in range(nspecies):
+            for i in range(2+nspecies+s*n*n, s*n*n+n*n):
+                fmax[s] = max(fmax[s], float(lines[i].strip().split(" ")[4]))
 
 E = np.zeros(len(files))
 Eerr = np.zeros(len(files))
@@ -95,33 +96,34 @@ for file_i, filename in enumerate(files):
         print(filename)
 
     # record distribution
-    for i in range(2+nspecies, len(lines)):
-        line = lines[i]
-        line_s = line.strip().split(" ")
-        specie = int(line_s[0])
-        index = int(line_s[1])
-        vx[specie][index] = float(line_s[2])
-        vy[specie][index] = float(line_s[3])
-        f[specie][index] = float(line_s[4])
+    if len(lines) > 2+nspecies:
+        for i in range(2+nspecies, len(lines)):
+            line = lines[i]
+            line_s = line.strip().split(" ")
+            specie = int(line_s[0])
+            index = int(line_s[1])
+            vx[specie][index] = float(line_s[2])
+            vy[specie][index] = float(line_s[3])
+            f[specie][index] = float(line_s[4])
 
-    #plot distribution to file
-    plt.cla()
+        #plot distribution to file
+        plt.cla()
 
-    # plot distribution for current time step
-    colourMaps = ["viridis", "inferno", "viridis", "summer"]
-    alphas = [0.6, 0.6]
-    resolutions = [20, 20]
-    vmaxes = [fmax[0]/2]
-    if nspecies > 1:
-        vmaxes.append(fmax[1])
-    for i in range(nspecies):
-        plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), resolutions[i], vmax=vmaxes[i], alpha=alphas[i], cmap=colourMaps[i])
-    imgname = 'out/data/plot_C_' + str(t+1).zfill(6) + '.png'
-    plt.axis('equal')
-    plt.ylabel("V [m/s]")
-    plt.xlabel("V [m/s]")
-    plt.draw()
-    plt.savefig(imgname)
+        # plot distribution for current time step
+        colourMaps = ["viridis", "inferno", "viridis", "summer"]
+        alphas = [0.6, 0.6]
+        resolutions = [20, 20]
+        vmaxes = [fmax[0]/2]
+        if nspecies > 1:
+            vmaxes.append(fmax[1])
+        for i in range(nspecies):
+            plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), resolutions[i], vmax=vmaxes[i], alpha=alphas[i], cmap=colourMaps[i])
+        imgname = 'out/data/plot_C_' + str(t+1).zfill(6) + '.png'
+        plt.axis('equal')
+        plt.ylabel("V [m/s]")
+        plt.xlabel("V [m/s]")
+        plt.draw()
+        plt.savefig(imgname)
 
 createDir("./plots/eps")
 createDir("./plots/png")
@@ -198,20 +200,6 @@ plt.gcf().subplots_adjust(left=0.15)
 plt.ticklabel_format(axis='y', style='sci', scilimits=(3,4))
 plt.savefig("out/EnergySpecies.eps")
 plt.savefig("out/EnergySpecies.png")
-
-# plot single species P norm
-# plt.clf()
-# plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-# for s in range(0, nspecies):
-#     plt.scatter(times, PSpeciesNorm[s], label=specieNames[s], s=0.5)
-#     plt.plot(times, PSpeciesNorm[s])
-#     plt.legend()
-# plt.xlabel("Time [s]")
-# plt.ylabel("|P|")
-# # current_values = plt.gca().get_yticks()
-# # plt.gca().set_yticklabels(['{:e}'.format(x) for x in current_values])
-# plt.savefig("out/PspeciesNorm.eps")
-# plt.savefig("out/PspeciesNorm.png")
 
 # plot single species temeperature separated for each axis
 plt.clf()

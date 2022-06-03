@@ -45,7 +45,7 @@ void Run(Config* config0) {
     Vector2d P0 = Momentum(p1, config), P;
     VectorXd* dSdV = new VectorXd[config->nspecies];
     for (int s=0; s<config->nspecies; s++) {
-        f_mesh[s] = new double[config->nmarkers_outputmesh];
+        f_mesh[s] = new double[config->_nmarkers_outputmesh];
         dSdV[s] = VectorXd(2*config->nmarkers);
         print_out(VERBOSE_NORMAL, "Specie %d Epsilon: %e\n", s, config->species[s].eps);
     }
@@ -247,7 +247,7 @@ void printState(
     if (config->normalize) {
         dt *= config->t0;
     }
-    fprintf(fout, "%d %d %d %e\n", config->nspecies, config->nmarkers, config->nmarkers_outputmesh, dt);
+    fprintf(fout, "%d %d %d %e\n", config->nspecies, config->nmarkers, config->_nmarkers_outputmesh, dt);
     fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0]), (P[1]-P0[1]), thermalAnalytic);
     double T, Tx, Ty;
     for (int s=0; s<config->nspecies; s++) {
@@ -261,13 +261,16 @@ void printState(
         }
         fprintf(fout, "%e %e %e %e %e %e %s\n", E, V[0], V[1], T, Tx, Ty, config->species[s].name);
     }
-    for (int s=0; s<config->nspecies; s++) {
-        for (int i=0; i<config->nmarkers_outputmesh; i++) {
-            Vector2d z = p_mesh[i].z;
-            if (config->normalize) {
-                z *= config->v0;
+
+    if (t % config->recordMeshAtStep == 0) {
+        for (int s=0; s<config->nspecies; s++) {
+            for (int i=0; i<config->_nmarkers_outputmesh; i++) {
+                Vector2d z = p_mesh[i].z;
+                if (config->normalize) {
+                    z *= config->v0;
+                }
+                fprintf(fout, "%d %d %e %e %e\n", s, i, z(0), z(1), f_mesh[s][i]);
             }
-            fprintf(fout, "%d %d %e %e %e\n", s, i, z(0), z(1), f_mesh[s][i]);
         }
     }
 
@@ -327,7 +330,7 @@ void mesh_distribution(
     Config* config
 ) {
     for (int s=0; s<config->nspecies; s++) {
-        for (int i=0; i<config->nmarkers_outputmesh; i++) {
+        for (int i=0; i<config->_nmarkers_outputmesh; i++) {
             ret[s][i] = 0;
             double CONST_2EPS_M1 = 1./(2.*config->species[s].eps);
             double CONST_2PIEPS_M1 = 1./(CONST_2PI*config->species[s].eps);
@@ -426,7 +429,7 @@ Particle2d* initOutputPrintMesh(Config* config) {
     int nx = (xmax - xmin) / dx;
     int ny = (ymax - ymin) / dy;
     int nmarkers = nx*ny;
-    config->nmarkers_outputmesh = nmarkers;
+    config->_nmarkers_outputmesh = nmarkers;
 
     printf("INIT OUTPUT MESH: %d %d %e %e %e\n", nx, ny, xmin, xmax, dx);
 

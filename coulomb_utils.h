@@ -80,8 +80,6 @@ namespace Coulomb {
         int nx;
         int ny;
         int nmarkers;
-        int nmarkers_outputmesh;
-        int highResolutionMesh; // use the highest resolution for building the output plot mesh
         DistributionType distributionType;
         double dt;
         double dx;
@@ -92,8 +90,12 @@ namespace Coulomb {
         double* kHermite;
         double* wHermite;
         int nHermite;
-        int recordAtStep;
         int cudaThreadsPerBlock;
+
+        // print to file parameters
+        int recordAtStep; // print state every n-th step
+        int recordMeshAtStep; // print mesh every n-th step
+        int highResolutionMesh; // flag, use the highest resolution for building the output plot mesh
 
         // normalization constants
         int normalize; // normalize flag. Recommended to be set
@@ -110,6 +112,9 @@ namespace Coulomb {
 
         int nspecies;
         Specie* species;
+
+        // internal variables
+        int _nmarkers_outputmesh;
 
     } Config;
 }
