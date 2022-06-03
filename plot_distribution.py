@@ -118,6 +118,8 @@ for file_i, filename in enumerate(files):
         plt.contourf(vx[i,:].reshape(n,n), vy[i,:].reshape(n,n), f[i,:].reshape(n,n), resolutions[i], vmax=vmaxes[i], alpha=alphas[i], cmap=colourMaps[i])
     imgname = 'out/data/plot_C_' + str(t+1).zfill(6) + '.png'
     plt.axis('equal')
+    plt.ylabel("V [m/s]")
+    plt.xlabel("V [m/s]")
     plt.draw()
     plt.savefig(imgname)
 
