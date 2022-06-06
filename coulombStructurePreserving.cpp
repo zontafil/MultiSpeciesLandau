@@ -848,7 +848,7 @@ double thermalizationTime(Config* config) {
 
 void format_duration(int seconds, char* ret) {
     int minutes = (int) ((seconds / (60)) % 60);
-    int hours   = (int) ((seconds / (60*60)) % 24);
+    int hours   = (int) ((seconds / (60*60)));
 
     sprintf(ret, "%d Hours, %d Minutes, %d Seconds", hours, minutes, seconds%60);
 }
