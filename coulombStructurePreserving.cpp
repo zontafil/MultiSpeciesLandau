@@ -21,6 +21,8 @@ void Run(Config* config0) {
         config->T0 = 1.;
         config->nu0 = 1.;
     }
+
+    // init markers
     Particle2d* p_mesh = initOutputPrintMesh(config);
     Particle2d** p0 = new Particle2d*[config->nspecies];
     Particle2d** p1 = new Particle2d*[config->nspecies];
@@ -37,6 +39,12 @@ void Run(Config* config0) {
         for (int s=0; s<config->nspecies; s++) {
             printf("nu%d%d %e\n", i,s, specie.nu[s]);
         }
+    }
+
+    // init eq. motion iterations helper variables
+    VectorXd* eom_f = new VectorXd[config->nspecies];
+    for (int s=0; s<config->nspecies; s++) {
+        eom_f[s] = VectorXd(2*config->nmarkers);
     }
 
     // initial energy
@@ -99,7 +107,7 @@ void Run(Config* config0) {
                     break;
                 }
             } else {
-                if (pushForward_dv(p0, p1, dSdV, config)) {
+                if (pushForward_dv(p0, p1, dSdV, eom_f, config)) {
                     break;
                 }
             }
@@ -119,6 +127,7 @@ void Run(Config* config0) {
 
     printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0);
 
+    delete[] eom_f;
     for (int s=0; s<config->nspecies; s++) {
         free(p0[s]);
         free(p1[s]);
@@ -450,12 +459,9 @@ int pushForward_dv(
     Particle2d** p0,
     Particle2d** p1,
     VectorXd* dSdV,
+    VectorXd* f,
     Config* config
 ) {
-    VectorXd* f = new VectorXd[config->nspecies];
-    for (int s=0; s<config->nspecies; s++) {
-        f[s] = VectorXd(2*config->nmarkers);
-    }
     Kernel::f_eqmotion_dv(f, p0, p1, dSdV, config);
     if (VERBOSE_LEVEL >= VERBOSE_SILLY) {
         printf("=== dv\n");
