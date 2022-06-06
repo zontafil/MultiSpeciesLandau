@@ -9,6 +9,8 @@ typedef double real;  /**< Double precision float   */
 #include <limits>
 #include <stdio.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef INTELLISENSE
 #include <eigen3/Eigen/Dense> // global installation

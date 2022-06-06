@@ -235,6 +235,7 @@ void printState(
     // build distribution at mesh nodes and print to file
     mesh_distribution(f_mesh, p_mesh, p1, config);
     char filename[30];
+    mkdir("./out/data", 0777);
     snprintf (filename, sizeof filename, "out/data/step_C_%08d.txt", t);
     FILE* fout = fopen(filename, "w+");
 
