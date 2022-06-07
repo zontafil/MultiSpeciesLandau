@@ -206,6 +206,28 @@ plt.ticklabel_format(axis='y', style='sci', scilimits=(3,4))
 plt.savefig("out/EnergySpecies.eps")
 plt.savefig("out/EnergySpecies.png")
 
+# plot single species temeperature separated for each axis (log scale)
+plt.clf()
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+for s in range(0, nspecies):
+    plt.scatter(times, TspeciesAxes[s, 0], label=specieNames[s]+" x", s=0.5)
+    plt.plot(times, TspeciesAxes[s, 0])
+    plt.scatter(times, TspeciesAxes[s, 1], label=specieNames[s]+" y", s=0.5)
+    plt.plot(times, TspeciesAxes[s, 1])
+legend = plt.legend()
+for s in range(0, 2*nspecies):
+    legend.legendHandles[s]._sizes = [30]
+# plt.ylim(bottom=0)
+plt.xscale("log")
+plt.grid()
+plt.xlabel("Time [s]")
+plt.ylabel("Temperature [eV]")
+plt.gcf().subplots_adjust(left=0.15)
+current_values = plt.gca().get_yticks()
+plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
+plt.savefig("out/TemperatureSpeciesAxesLog.eps")
+plt.savefig("out/TemperatureSpeciesAxesLog.png")
+
 # plot single species temeperature separated for each axis
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
