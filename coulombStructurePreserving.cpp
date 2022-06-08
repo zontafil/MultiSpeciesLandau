@@ -833,8 +833,9 @@ double thermalizationTime(Config* config) {
         print_out(VERBOSE_NORMAL, "Thermalization time not available with nspecies != 2\n");
         return 0;
     }
-    double ma = config->species[0].m;
-    double mb = config->species[1].m;
+    // compute needed quantities in c.g.s + eV
+    double ma = config->species[0].m * 1000;
+    double mb = config->species[1].m * 1000;
     double Ta = sqrt(config->species[0].Tx*config->species[0].Ty);
     double Tb = sqrt(config->species[1].Tx*config->species[1].Ty);
     double TaK = Ta * CONST_E / CONST_KB;

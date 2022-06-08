@@ -17,6 +17,16 @@ def createDir(path):
     except OSError as error:
         pass
 
+def Tanalytic(t, ma, mb, n, l, Ta, Tb):
+    t[0] = 0
+    ma = ma * 1000
+    mb = mb * 1000
+    n = n * 10**(-6)
+    nu =  1.8*10**(-19) * np.sqrt(ma*mb) * n * l / (ma*Ta + mb*Tb)**(1.5)
+    tau = 1. / nu
+    ret =  (Ta+Tb)/2. + (Ta-Tb)/2.* np.exp(-2.*t/tau);
+    return ret
+
 
 files = glob.glob("./out/data/step_C*.txt")
 files.sort()
@@ -289,6 +299,7 @@ plt.savefig("out/TemperatureSpecies.png")
 
 # plot single species temeperature
 plt.clf()
+# thermalAnalytic = Tanalytic(times, 9.109*10**(-31), 3.34*10**(-27), 1*10**(20), 6.6, 350, 225)
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 for s in range(0, nspecies):
     plt.scatter(times, Tspecies[s], label=specieNames[s], s=0.5)
