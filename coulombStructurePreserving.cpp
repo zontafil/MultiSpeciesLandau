@@ -233,7 +233,6 @@ void printState(
     Vector2d P0
 ) {
     // build distribution at mesh nodes and print to file
-    mesh_distribution(f_mesh, p_mesh, p1, config);
     char filename[30];
     mkdir("./out/data", 0777);
     snprintf (filename, sizeof filename, "out/data/step_C_%08d.txt", t);
@@ -273,6 +272,7 @@ void printState(
     }
 
     if (t % config->recordMeshAtStep == 0) {
+        mesh_distribution(f_mesh, p_mesh, p1, config);
         for (int s=0; s<config->nspecies; s++) {
             for (int i=0; i<config->_nmarkers_outputmesh; i++) {
                 Vector2d z = p_mesh[i].z;
