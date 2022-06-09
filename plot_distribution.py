@@ -11,25 +11,89 @@ import matplotlib.ticker as mtick
 plt.figure(figsize=(6,6))
 plt.rcParams.update({'font.size': 16})
 
+ma = 9.109*10**(-31)
+mb = 3.34*10**(-27)
+density = 1*10**(20)
+l = 6.6
+Tax = 400
+Tay = 300
+Tbx = 250
+Tby = 200
+
 def createDir(path):
     try: 
         os.mkdir(path)
     except OSError as error:
         pass
 
-def Tanalytic(t, ma, mb, n, l, Ta, Tb):
-    t[0] = 0
+def time_thermalization(t, ma, mb, n, l, Ta, Tb):
     ma = ma * 1000
     mb = mb * 1000
     n = n * 10**(-6)
     nu =  1.8*10**(-19) * np.sqrt(ma*mb) * n * l / (ma*Ta + mb*Tb)**(1.5)
-    tau = 1. / nu
-    ret =  (Ta+Tb)/2. + (Ta-Tb)/2.* np.exp(-2.*t/tau);
+    tau = 1. / (2*nu)
+    return tau
+
+def time_isotropization(t, m, n, l, Tx, Ty):
+    Tpar = Tx
+    Tperp = Ty
+    e = 1.602176565*10**(-19) * 3*10**9
+    m = m * 1000
+    n = n * 10**(-6)
+    k = 1.6*10**(-12)
+    A = Tperp/Tpar - 1
+    if (A>0):
+        f = np.arctan(np.sqrt(A))/np.sqrt(A)
+    else:
+        f = np.arctanh(np.sqrt(-A))/np.sqrt(-A)
+    nu = (2*np.sqrt(np.pi)*e**4*n*l)/(np.sqrt(m)*(k*Tpar)**(1.5)) \
+        * A**(-2) * (-3 + (A+3)*(f))
+    tau = 1 / nu
+    ret = [tau/4, tau/4]
+    # ret[0] =  (Tpar+Tperp)/2. + (Tpar-Tperp)/2.* np.exp(-4.*t/tau)
+    # ret[1] =  (Tperp+Tpar)/2. + (Tperp-Tpar)/2.* np.exp(-2.*t/tau)
+    return ret
+
+def Tisothermal(t, ma, mb, n, l, Tax, Tay, Tbx, Tby):
+    # compute times
+    Ta = np.sqrt(Tax*Tay)
+    Tb = np.sqrt(Tbx*Tby)
+    Ta = (Tax+Tay)/2
+    Tb = (Tbx+Tby)/2
+    tau_a_iso = time_isotropization(t, ma, n, l, Tax, Tay)
+    tau_b_iso = time_isotropization(t, mb, n, l, Tbx, Tby)
+    tau_a_thermal = time_thermalization(t, ma, mb, n, l, Ta, Tb)
+    tau_b_thermal = time_thermalization(t, mb, ma, n, l, Tb, Ta)
+    
+    ret = [0,0,0,0]
+    ret[0] = (Ta+Tb)/2. + (Ta-Tb)/2.* np.exp(-t/tau_a_thermal) + (Tax-Tay)/2 * np.exp(-t/tau_a_iso[0])
+    ret[1] = (Ta+Tb)/2. + (Ta-Tb)/2.* np.exp(-t/tau_a_thermal) + (Tay-Tax)/2 * np.exp(-t/tau_a_iso[1])
+    ret[2] = (Ta+Tb)/2. + (Tb-Ta)/2.* np.exp(-t/tau_b_thermal) + (Tbx-Tby)/2 * np.exp(-t/tau_b_iso[0])
+    ret[3] = (Ta+Tb)/2. + (Tb-Ta)/2.* np.exp(-t/tau_b_thermal) + (Tby-Tbx)/2 * np.exp(-t/tau_b_iso[1])
+
+    return ret
+
+def Tthermal(t, ma, mb, n, l, Tax, Tay, Tbx, Tby):
+    # compute times
+    Ta = np.sqrt(Tax*Tay)
+    Ta = (Tax+Tay)/2
+    Tb = np.sqrt(Tbx*Tby)
+    Tb = (Tbx+Tby)/2
+    tau_a_thermal = time_thermalization(t, ma, mb, n, l, Ta, Tb)
+    tau_b_thermal = time_thermalization(t, mb, ma, n, l, Tb, Ta)
+    
+    ret = [0,0]
+    ret[0] = (Ta+Tb)/2. + (Ta-Tb)/2.* np.exp(-t/tau_a_thermal)
+    ret[1] = (Ta+Tb)/2. + (Tb-Ta)/2.* np.exp(-t/tau_b_thermal)
+
     return ret
 
 
 files = glob.glob("./out/data/step_C*.txt")
 files.sort()
+
+# files = files[0:100]
+
 fmax = None
 nspecies = 0
 dt = 0
@@ -117,11 +181,11 @@ for file_i, filename in enumerate(files):
             line = lines[i]
             line_s = line.strip().split(" ")
             if len(line_s) >= 5:
-            specie = int(line_s[0])
-            index = int(line_s[1])
-            vx[specie][index] = float(line_s[2])
-            vy[specie][index] = float(line_s[3])
-            f[specie][index] = float(line_s[4])
+                specie = int(line_s[0])
+                index = int(line_s[1])
+                vx[specie][index] = float(line_s[2])
+                vy[specie][index] = float(line_s[3])
+                f[specie][index] = float(line_s[4])
 
         #plot distribution to file
         plt.cla()
@@ -245,6 +309,75 @@ plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
 plt.savefig("out/TemperatureSpeciesAxesLog.eps")
 plt.savefig("out/TemperatureSpeciesAxesLog.png")
 
+
+# plot single species temeperature separated for each axis plt.clf()
+plt.clf()
+times_log = times.copy()
+# times_log[0] = 10**(-7)
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+Tanalytic = Tisothermal(times_log, ma, mb, density, l, Tax, Tay, Tbx, Tby)
+for s in range(0, nspecies):
+    plt.scatter(times_log, TspeciesAxes[s, 0], label=specieNames[s]+" x", s=0.5)
+    plt.plot(times_log, TspeciesAxes[s, 0])
+    plt.scatter(times_log, TspeciesAxes[s, 1], label=specieNames[s]+" y", s=0.5)
+    plt.plot(times_log, TspeciesAxes[s, 1])
+# analytic solution for electrons
+plt.scatter(times_log, Tanalytic[0], color="black", label="Analytic", s=0.5)
+plt.plot(times_log, Tanalytic[0], color="black", linestyle="dashed")
+plt.scatter(times_log, Tanalytic[1], s=0.5)
+plt.plot(times_log, Tanalytic[1], color="black", linestyle="dashed")
+plt.scatter(times_log, Tanalytic[2], s=0.5)
+plt.plot(times_log, Tanalytic[2], color="black", linestyle="dashed")
+plt.scatter(times_log, Tanalytic[3], s=0.5)
+plt.plot(times_log, Tanalytic[3], color="black", linestyle="dashed")
+# legend = plt.legend(loc='upper right')
+legend = plt.legend(bbox_to_anchor=(1,1), loc="upper right")
+
+for s in range(0, 5):
+    legend.legendHandles[s]._sizes = [30]
+# plt.ylim(bottom=0)
+plt.grid()
+plt.xscale("log")
+plt.xlabel("Time [s]")
+plt.ylabel("Temperature [eV]")
+plt.gcf().subplots_adjust(left=0.15)
+current_values = plt.gca().get_yticks()
+plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
+plt.savefig("out/TemperatureSpeciesAxesAnalytic_log.eps")
+plt.savefig("out/TemperatureSpeciesAxesAnalytic_log.png")
+
+
+# plot single species temeperature separated for each axis plt.clf()
+plt.clf()
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+Tanalytic = Tisothermal(times, ma, mb, density, l, Tax, Tay, Tbx, Tby)
+for s in range(0, nspecies):
+    plt.scatter(times, TspeciesAxes[s, 0], label=specieNames[s]+" x", s=0.5)
+    plt.plot(times, TspeciesAxes[s, 0])
+    plt.scatter(times, TspeciesAxes[s, 1], label=specieNames[s]+" y", s=0.5)
+    plt.plot(times, TspeciesAxes[s, 1])
+# analytic solution for electrons
+plt.scatter(times, Tanalytic[0], label="Analytic", s=0.5)
+plt.plot(times, Tanalytic[0], color="green", linestyle="dashed")
+plt.scatter(times, Tanalytic[1], s=0.5)
+plt.plot(times, Tanalytic[1], color="green", linestyle="dashed")
+plt.scatter(times, Tanalytic[2], label="Analytic", s=0.5)
+plt.plot(times, Tanalytic[2], color="green", linestyle="dashed")
+plt.scatter(times, Tanalytic[3], s=0.5)
+plt.plot(times, Tanalytic[3], color="green", linestyle="dashed")
+for s in range(0, 2*nspecies):
+    legend.legendHandles[s]._sizes = [30]
+plt.xlim(right=10**(-4), left=0)
+plt.grid()
+plt.xlabel("Time [s]")
+plt.ylabel("Temperature [eV]")
+plt.gcf().subplots_adjust(left=0.15)
+current_values = plt.gca().get_yticks()
+plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
+plt.savefig("out/TemperatureSpeciesAxesAnalytic_zoom.eps")
+plt.savefig("out/TemperatureSpeciesAxesAnalytic_zoom.png")
+
+
 # plot single species temeperature separated for each axis
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
@@ -266,26 +399,6 @@ plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
 plt.savefig("out/TemperatureSpeciesAxes.eps")
 plt.savefig("out/TemperatureSpeciesAxes.png")
 
-# plot single species delta temeperature (log scale)
-if nspecies > 1:
-    plt.clf()
-    Tdelta = np.abs(Tspecies[0] - Tspecies[1])
-    offset = 10
-    print(len(Tdelta))
-    print("asd")
-    plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-    plt.scatter(times[offset:], Tdelta[offset:], s=0.5)
-    plt.plot(times[offset:], Tdelta[offset:])
-    plt.gca().set_yscale('log')
-    plt.xlabel("Time [s]")
-    plt.ylabel("Temperature [eV]")
-    plt.gcf().subplots_adjust(left=0.15)
-    plt.grid()
-    current_values = plt.gca().get_yticks()
-    plt.gca().set_yticklabels(['{:.0f}'.format(x) for x in current_values])
-    plt.savefig("out/TemperatureSpeciesLog.eps")
-    plt.savefig("out/TemperatureSpeciesLog.png")
-
 # plot single species temeperature
 plt.clf()
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
@@ -306,13 +419,13 @@ plt.savefig("out/TemperatureSpecies.png")
 
 # plot single species temeperature
 plt.clf()
-# thermalAnalytic = Tanalytic(times, 9.109*10**(-31), 3.34*10**(-27), 1*10**(20), 6.6, 350, 225)
+an = Tthermal(times, ma, mb, density, l, Tax, Tay, Tbx, Tby)
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 for s in range(0, nspecies):
     plt.scatter(times, Tspecies[s], label=specieNames[s], s=0.5)
     plt.plot(times, Tspecies[s])
-plt.scatter(times, thermalAnalytic, label="Analytic", s=0.5)
-plt.plot(times, thermalAnalytic)
+plt.scatter(times, an[0], label="Analytic", s=0.5)
+plt.plot(times, an[0])
 legend = plt.legend()
 for s in range(0, nspecies):
     legend.legendHandles[s]._sizes = [30]
