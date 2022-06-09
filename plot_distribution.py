@@ -37,16 +37,22 @@ file = open(files[0], "r")
 lines = file.readlines()
 nspecies = int(lines[0].strip().split(" ")[0])
 fmax = np.zeros(nspecies)
-for filename in files:
+for file_i, filename in enumerate(files):
+    print("Analizing file {} of {}".format(file_i, len(files)))
     file = open(filename, "r")
     lines = file.readlines()
     n = int(math.sqrt(float(lines[0].strip().split(" ")[2])))
     nspecies = int(lines[0].strip().split(" ")[0])
     dt = float(lines[0].strip().split(" ")[3])
     if len(lines) > 2+nspecies:
-        for s in range(nspecies):
-            for i in range(2+nspecies+s*n*n, s*n*n+n*n):
-                fmax[s] = max(fmax[s], float(lines[i].strip().split(" ")[4]))
+        for i in range(2+nspecies, len(lines)):
+            line = lines[i]
+            line_s = line.strip().split(" ")
+            if (len(line_s)<5):
+                continue
+            specie = int(line_s[0])
+            index = int(line_s[1])
+            fmax[specie] = max(fmax[specie], float(line_s[4]))
 
 E = np.zeros(len(files))
 Eerr = np.zeros(len(files))
@@ -110,6 +116,7 @@ for file_i, filename in enumerate(files):
         for i in range(2+nspecies, len(lines)):
             line = lines[i]
             line_s = line.strip().split(" ")
+            if len(line_s) >= 5:
             specie = int(line_s[0])
             index = int(line_s[1])
             vx[specie][index] = float(line_s[2])
