@@ -14,14 +14,6 @@ Copy an example simulation from `examples/` to `main.cpp`
 
 ## Compile
 
-### CPU Version
-
-`make`
-
-The CPU version is currently not wokring. TO FIX
-
-### CUDA version
-
 `CUDA=1 make`
 
 ### Logging levels and debug symbols
