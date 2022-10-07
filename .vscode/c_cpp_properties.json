@@ -7,10 +7,10 @@
             "cStandard": "c17",
             "cppStandard": "c++14",
             "intelliSenseMode": "linux-gcc-x64",
-            // "includePath": ["~/cudaInclude", "${workspaceRoot}"],
-            "browse": {
-                "limitSymbolsToIncludedHeaders": true
-            }
+            "includePath": ["${workspaceRoot}"]
+            // "browse": {
+            //     "limitSymbolsToIncludedHeaders": true
+            // }
         }
     ],
     "version": 4
