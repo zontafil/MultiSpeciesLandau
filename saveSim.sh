@@ -15,6 +15,7 @@ mkdir -p plots/$OUTFILE/frames
 cp main.cpp examples/$OUTFILE.cpp
 
 cp out/out.avi plots/$OUTFILE/$OUTFILE.avi
+cp *.py plots/$OUTFILE/
 
 cp out/*.png plots/$OUTFILE/png/
 cp out/*.eps plots/$OUTFILE/eps/
