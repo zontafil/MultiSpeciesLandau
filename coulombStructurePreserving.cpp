@@ -54,7 +54,9 @@ void Run(Config* config0) {
     }
 
     // initial energy
+    print_out(VERBOSE_NORMAL, "Computing initial energy, entropy\n");
     double E0 = K(p1, config), E;
+    double S0 = Kernel::computeS(p1, config);
     double** f_mesh = new double*[config->nspecies];
     Vector2d P0 = Momentum(p1, config), P;
     VectorXd* dSdV = new VectorXd[config->nspecies];
@@ -87,7 +89,7 @@ void Run(Config* config0) {
         }
 
         if (nsteps%config->recordAtStep == 0) {
-            printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0);
+            printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0, S0);
         }
 
         // precompute entropy gradient
@@ -131,7 +133,7 @@ void Run(Config* config0) {
     
     fprintf(benchOut, "%d %f %f %f\n", config->nx, config->time_total, config->time_dsdv, config->time_eqmotion);
 
-    printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0);
+    printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0, S0);
 
     delete[] eom_f;
     for (int s=0; s<config->nspecies; s++) {
@@ -236,8 +238,13 @@ void printState(
     Config* config0,
     int t,
     double E0,
-    Vector2d P0
+    Vector2d P0,
+    double S0
 ) {
+
+    double S = Kernel::computeS(p1, config);
+    double dS = (S-S0)/S0;
+    print_out(VERBOSE_NORMAL, "(S-S0)/S0: %.15e\n", dS);
     // build distribution at mesh nodes and print to file
     char filename[30];
     mkdir("./out/data", 0777);
@@ -263,7 +270,7 @@ void printState(
         dt *= config->t0;
     }
     fprintf(fout, "%d %d %d %e\n", config->nspecies, config->nmarkers, config->_nmarkers_outputmesh, dt);
-    fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0]), (P[1]-P0[1]), thermalAnalytic);
+    fprintf(fout, "%e %e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0]), (P[1]-P0[1]), thermalAnalytic, dS);
     double T, Tx, Ty, n, m;
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);

@@ -98,6 +98,47 @@ namespace Kernel {
      * @brief CUDA version of entropy gradient
      * return - dS/dV / (m * w_p)
      */
+    __global__ void cuda_S(
+        double** ret,
+        Particle2d** p,
+        Config* config,
+        Specie* species
+    ) {
+        int global_idx = blockIdx.x*config->cudaThreadsPerBlock + threadIdx.x;
+        int s = global_idx / config->nmarkers;
+        int s2 = s;
+        int i_p1 = global_idx % config->nmarkers;
+        if (s < config->nspecies) {
+            Particle2d* ps1 = p[s];
+            double* rets1 = ret[s];
+            double logsum, dx, dy, kpx, kpy;
+            double eps = species[s].eps;
+            double SQRT2EPSM1 = 1./sqrt(2.*eps);
+            double PI2EPSM1 = 1./(CONST_2PI * eps);
+            rets1[i_p1] = 0;
+            for (int i=0; i<config->nHermite; i++)
+            for (int j=0; j<config->nHermite; j++) {
+                logsum = 0;
+
+                // TODO: Normalize z to SQRT2EPSM1 --> ~10% performance boost
+                kpx = config->kHermite[i] + ps1[i_p1].z[0] * SQRT2EPSM1;
+                kpy = config->kHermite[j] + ps1[i_p1].z[1] * SQRT2EPSM1;
+
+                for (int i_p2 = 0; i_p2<config->nmarkers; i_p2++) {
+                    dx = kpx - p[s2][i_p2].z[0] * SQRT2EPSM1;
+                    dy = kpy - p[s2][i_p2].z[1] * SQRT2EPSM1;
+                    logsum+=p[s2][i_p2].weight* exp(-dx*dx - dy*dy);
+                }
+                logsum = config->wHermite[i]*config->wHermite[j] * log(logsum * PI2EPSM1);
+                rets1[i_p1] += logsum;
+            }
+            rets1[i_p1] *= - ps1[i_p1].weight / CONST_PI;
+        }
+    }
+    /**
+     * @brief CUDA version of entropy gradient
+     * return - dS/dV / (m * w_p)
+     */
     __global__ void cuda_dSdv(
         double** ret,
         Particle2d** p,
@@ -239,6 +280,95 @@ namespace Kernel {
     }
 
 
+    double computeS(
+        Particle2d** p,
+        Config* config
+    ) {
+
+        VectorXd* ret = new VectorXd[config->nspecies];
+        for (int s=0; s<config->nspecies; s++) {
+            ret[s] = VectorXd(config->nmarkers);
+        }
+
+        // CUDA blocks configuration
+        int nblocks = ceil(float(config->nmarkers) / config->cudaThreadsPerBlock);
+
+        // // Allocate device arrays
+        Config* d_config, *l_config = new Config;
+        Particle2d** d_p;
+        Particle2d** h_p = new Particle2d*[config->nspecies];
+
+        double* d_kHermite, *d_wHermite;
+        HANDLE_ERROR(cudaMalloc((void **)&d_p, sizeof(Particle2d*)*config->nspecies));    
+        HANDLE_ERROR(cudaMalloc((void **)&d_config, sizeof(Config)));
+        HANDLE_ERROR(cudaMalloc((void **)&d_kHermite, sizeof(double)*config->nHermite));
+        HANDLE_ERROR(cudaMalloc((void **)&d_wHermite, sizeof(double)*config->nHermite));
+        for (int s=0; s<config->nspecies; s++) {
+            HANDLE_ERROR(cudaMalloc((void **)&(h_p[s]), sizeof(Particle2d)*config->nmarkers));
+            HANDLE_ERROR(cudaMemcpy(h_p[s], p[s], sizeof(Particle2d)*config->nmarkers, cudaMemcpyHostToDevice));
+        }
+        HANDLE_ERROR(cudaMemcpy (d_p, h_p, config->nspecies*sizeof(Particle2d*), cudaMemcpyHostToDevice));
+
+        // init ret
+        double** h_ret = new double*[config->nspecies], **d_ret;
+        HANDLE_ERROR(cudaMalloc((void **)&d_ret, sizeof(double*)*config->nspecies));    
+        for (int s=0; s<config->nspecies; s++) {
+            HANDLE_ERROR(cudaMalloc((void **)&h_ret[s], sizeof(double)*config->nmarkers));
+        }
+        HANDLE_ERROR(cudaMemcpy (d_ret, h_ret, config->nspecies*sizeof(double*), cudaMemcpyHostToDevice));
+
+        // init spieces config
+        Specie h_species[config->nspecies], *d_species;
+        HANDLE_ERROR(cudaMalloc((void **)&d_species, sizeof(Specie)*config->nspecies));    
+        for (int s=0; s<config->nspecies; s++) {
+            memcpy(&h_species[s], &config->species[s], sizeof(Specie));
+            HANDLE_ERROR(cudaMalloc((void **)&(h_species[s].nu), sizeof(double)*config->nspecies));    
+            HANDLE_ERROR(cudaMemcpy(h_species[s].nu, config->species[s].nu, sizeof(double)*config->nspecies, cudaMemcpyHostToDevice));
+        }
+        HANDLE_ERROR(cudaMemcpy (d_species, h_species, config->nspecies*sizeof(Specie), cudaMemcpyHostToDevice));
+
+        // // Copy to device
+        memcpy(l_config, config, sizeof(Config));
+        HANDLE_ERROR(cudaMemcpy(d_kHermite, config->kHermite, sizeof(double)*config->nHermite, cudaMemcpyHostToDevice));
+        HANDLE_ERROR(cudaMemcpy(d_wHermite, config->wHermite, sizeof(double)*config->nHermite, cudaMemcpyHostToDevice));
+        l_config->kHermite = d_kHermite;
+        l_config->wHermite = d_wHermite;
+        HANDLE_ERROR(cudaMemcpy(d_config, l_config, sizeof(Config), cudaMemcpyHostToDevice));
+
+        cuda_S<<<nblocks, config->cudaThreadsPerBlock>>>(d_ret, d_p, d_config, d_species);
+        HANDLE_ERROR( cudaPeekAtLastError() );
+
+        // Copy to host
+        for (int s=0; s<config->nspecies; s++) {
+            HANDLE_ERROR(cudaMemcpy(ret[s].data(), h_ret[s], sizeof(double)*ret[s].size(), cudaMemcpyDeviceToHost));
+        }
+
+        // compute final entropy
+        double S = 0;
+        for (int s = 0; s<config->nspecies; s++) {
+            for (int i = 0; i<config->nmarkers; i++) {
+                S += ret[s][i];
+            }
+        }
+
+        // free memory
+        for (int s=0; s<config->nspecies; s++) {
+            HANDLE_ERROR(cudaFree(h_ret[s]));
+            HANDLE_ERROR(cudaFree(h_species[s].nu));
+            HANDLE_ERROR(cudaFree(h_p[s]));
+        }
+        
+        HANDLE_ERROR(cudaFree(d_ret));
+        HANDLE_ERROR(cudaFree(d_wHermite));
+        HANDLE_ERROR(cudaFree(d_kHermite));
+        HANDLE_ERROR(cudaFree(d_species));
+        HANDLE_ERROR(cudaFree(d_config));
+        HANDLE_ERROR(cudaFree(d_p));
+        free(h_p);
+        free(h_ret);
+        
+        return S;
+    }
     void computedSdv(
         VectorXd* ret,
         Particle2d** p,

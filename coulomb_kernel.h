@@ -8,6 +8,10 @@
 using namespace Coulomb;
 
 namespace Kernel {
+    double computeS(
+        Particle2d** p,
+        Config* config
+    );
     void computedSdv(
         VectorXd* ret,
         Particle2d** p,

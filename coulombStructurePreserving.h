@@ -64,7 +64,8 @@ namespace Coulomb {
         Config* config0,
         int t,
         double E0,
-        Vector2d P0
+        Vector2d P0,
+        double S0
     );
     double mccc_coefs_clog(int s1, int s2, Config* config);
     double coefs_nu(int s1, int s2, Config* config);
