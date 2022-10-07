@@ -41,7 +41,9 @@ void Run(Config* config0) {
         printf("Specie %d, m [kg]: %e\n", i, specie.m);
         printf("Specie %d, vmax [ms^-1] %e vmin [ms^-1] %e\n", i, specie.xmax, specie.xmin);
         for (int s=0; s<config->nspecies; s++) {
-            printf("nu%d%d %e\n", i,s, specie.nu[s]);
+            double clog = mccc_coefs_clog(i, s, config0);
+            double nu_un = coefs_nu(i, s, config0);
+            printf("clog%d%d %e nu%d%d %e\n", i,s, clog, i, s, nu_un);
         }
     }
 
