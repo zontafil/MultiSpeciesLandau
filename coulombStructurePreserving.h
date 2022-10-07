@@ -8,11 +8,11 @@ namespace Coulomb {
     Config* copyConfig(Config* config);
     double f(Vector2d v, int specie, Config* config);
     Particle2d* initMarkers(int specie, Config* config, DistributionType type);
-    Particle2d* initOutputPrintMesh(Config* config);
+    Particle2d* initOutputPrintMesh(Config* config, int s);
     double psi(Vector2d v, double eps);
     void mesh_distribution(
         double** ret,
-        Particle2d* p_mesh,
+        Particle2d** p_mesh,
         Particle2d** p,
         Config* config
     );
@@ -58,7 +58,7 @@ namespace Coulomb {
     Vector2d MomentumSpecie(Particle2d** p, int s, Config* config);
     void printState(
         double** f_mesh,
-        Particle2d* p_mesh,
+        Particle2d** p_mesh,
         Particle2d** p1,
         Config* config,
         Config* config0,

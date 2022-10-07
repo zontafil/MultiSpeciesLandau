@@ -116,7 +116,7 @@ namespace Coulomb {
         Specie* species;
 
         // internal variables
-        int _nmarkers_outputmesh;
+        int* _nmarkers_outputmesh;
 
     } Config;
 }

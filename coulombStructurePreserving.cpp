@@ -23,13 +23,17 @@ void Run(Config* config0) {
     }
 
     // init markers
-    Particle2d* p_mesh = initOutputPrintMesh(config);
+    print_out(VERBOSE_NORMAL, "Initializing markers\n");
+    Particle2d** p_mesh = new Particle2d*[config->nspecies];
     Particle2d** p0 = new Particle2d*[config->nspecies];
     Particle2d** p1 = new Particle2d*[config->nspecies];
+    config->_nmarkers_outputmesh = new int(config->nspecies);
     for (int i=0; i<config->nspecies; i++) {
         Specie specie = config->species[i];
         p0[i] = initMarkers(i, config, config->distributionType);
         p1[i] = initMarkers(i, config, config->distributionType);
+        p_mesh[i] = initOutputPrintMesh(config, i);
+
         printf("Specie %d, n [1]: %e\n", i, nSpecie(p1, i, config));
         printf("Specie %d, T0x [eV]: %e\n", i, specie.Tx);
         printf("Specie %d, T0y [eV]: %e\n", i, specie.Ty);
@@ -53,7 +57,7 @@ void Run(Config* config0) {
     Vector2d P0 = Momentum(p1, config), P;
     VectorXd* dSdV = new VectorXd[config->nspecies];
     for (int s=0; s<config->nspecies; s++) {
-        f_mesh[s] = new double[config->_nmarkers_outputmesh];
+        f_mesh[s] = new double[config->_nmarkers_outputmesh[s]];
         dSdV[s] = VectorXd(2*config->nmarkers);
         print_out(VERBOSE_NORMAL, "Specie %d Epsilon: %e\n", s, config->species[s].eps);
     }
@@ -224,7 +228,7 @@ Config* copyConfig(Config* config) {
  */
 void printState(
     double** f_mesh,
-    Particle2d* p_mesh,
+    Particle2d** p_mesh,
     Particle2d** p1,
     Config* config,
     Config* config0,
@@ -258,24 +262,28 @@ void printState(
     }
     fprintf(fout, "%d %d %d %e\n", config->nspecies, config->nmarkers, config->_nmarkers_outputmesh, dt);
     fprintf(fout, "%e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0]), (P[1]-P0[1]), thermalAnalytic);
-    double T, Tx, Ty;
+    double T, Tx, Ty, n, m;
     for (int s=0; s<config->nspecies; s++) {
         E = Kspecie(p1, s, config);
         V = averageVelocitySpecie(p1, s, config);
         T = TemperatureSpecie(p1, s, config);
         Tx = TemperatureSpecieSingleAxis(p1, s, 0, config);
         Ty = TemperatureSpecieSingleAxis(p1, s, 1, config);
+        n = config->species[s].n;
+        m = config->species[s].m;
         if (config->normalize) {
             V *= config->v0;
+            n = config->species[s].n * config->n0;
+            m = config->species[s].m * config->m0;
         }
-        fprintf(fout, "%e %e %e %e %e %e %s\n", E, V[0], V[1], T, Tx, Ty, config->species[s].name);
+        fprintf(fout, "%e %e %e %e %e %e %s %e %e %d\n", E, V[0], V[1], T, Tx, Ty, config->species[s].name, n, m, config->_nmarkers_outputmesh[s]);
     }
 
     if (t % config->recordMeshAtStep == 0) {
         mesh_distribution(f_mesh, p_mesh, p1, config);
         for (int s=0; s<config->nspecies; s++) {
-            for (int i=0; i<config->_nmarkers_outputmesh; i++) {
-                Vector2d z = p_mesh[i].z;
+            for (int i=0; i<config->_nmarkers_outputmesh[s]; i++) {
+                Vector2d z = p_mesh[s][i].z;
                 if (config->normalize) {
                     z *= config->v0;
                 }
@@ -335,17 +343,17 @@ double f(Vector2d v, int s, Config* config) {
  */
 void mesh_distribution(
     double** ret,
-    Particle2d* p_mesh,
+    Particle2d** p_mesh,
     Particle2d** p,
     Config* config
 ) {
     for (int s=0; s<config->nspecies; s++) {
-        for (int i=0; i<config->_nmarkers_outputmesh; i++) {
+        for (int i=0; i<config->_nmarkers_outputmesh[s]; i++) {
             ret[s][i] = 0;
             double CONST_2EPS_M1 = 1./(2.*config->species[s].eps);
             double CONST_2PIEPS_M1 = 1./(CONST_2PI*config->species[s].eps);
             for (int j=0; j<config->nmarkers; j++) {
-                ret[s][i] += exp(-(p_mesh[i].z - p[s][j].z).squaredNorm()*CONST_2EPS_M1)*p[s][j].weight;
+                ret[s][i] += exp(-(p_mesh[s][i].z - p[s][j].z).squaredNorm()*CONST_2EPS_M1)*p[s][j].weight;
             }
             ret[s][i] *= CONST_2PIEPS_M1;
             if (config->normalize) {
@@ -413,33 +421,27 @@ Particle2d* initMarkers(int s, Config* config, DistributionType type) {
  * @param config 
  * @return Particle2d* 
  */
-Particle2d* initOutputPrintMesh(Config* config) {
+
+Particle2d* initOutputPrintMesh(Config* config, int s) {
 
     // find limits of the mesh, find the largest limit of the species with the lowest separation
-    double xmin = config->species[0].xmin;
-    double xmax = config->species[0].xmax;
-    double ymin = config->species[0].ymin;
-    double ymax = config->species[0].ymax;
+    double xmin = config->species[s].xmin;
+    double xmax = config->species[s].xmax;
+    double ymin = config->species[s].ymin;
+    double ymax = config->species[s].ymax;
     double dx = (xmax - xmin) / config->nx;
     double dy = (ymax - ymin) / config->ny;
-    for (int s=1; s<config->nspecies; s++) {
+    for (int s=0; s<config->nspecies; s++) {
         xmin = fmin(xmin, config->species[s].xmin);
         ymin = fmin(ymin, config->species[s].ymin);
         xmax = fmax(xmax, config->species[s].xmax);
         ymax = fmax(ymax, config->species[s].ymax);
-        if (config->highResolutionMesh) {
-            dx = fmin(dx, (config->species[s].xmax - config->species[s].xmin)/config->nx);
-            dy = fmin(dy, (config->species[s].ymax - config->species[s].ymin)/config->ny);
-        } else {
-            dx = fmax(dx, (config->species[s].xmax - config->species[s].xmin)/config->nx);
-            dy = fmax(dy, (config->species[s].ymax - config->species[s].ymin)/config->ny);
-        }
     }
 
     int nx = (xmax - xmin) / dx;
     int ny = (ymax - ymin) / dy;
     int nmarkers = nx*ny;
-    config->_nmarkers_outputmesh = nmarkers;
+    config->_nmarkers_outputmesh[s] = nmarkers;
 
     printf("INIT OUTPUT MESH: %d %d %e %e %e\n", nx, ny, xmin, xmax, dx);
 
