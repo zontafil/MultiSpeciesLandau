@@ -145,7 +145,7 @@ void Run(Config* config0) {
     config->time_dsdv *= config->dt / config->t1;
     FILE* benchOut = fopen("benchmarks.txt", "a+");
     
-    fprintf(benchOut, "%d %f %f %f\n", config->nx, config->time_total, config->time_dsdv, config->time_eqmotion);
+    fprintf(benchOut, "%d %e %e %e\n", config->nx, config->time_total, config->time_dsdv, config->time_eqmotion);
 
     printState(f_mesh, p_mesh, p1, config, config0, nsteps, E0, P0, S0);
 
