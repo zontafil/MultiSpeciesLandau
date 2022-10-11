@@ -262,6 +262,12 @@ void printState(
     double S = Kernel::computeS(p1, config);
     double dS = (S-S0)/S0;
     print_out(VERBOSE_NORMAL, "(S-S0)/S0: %.15e\n", dS);
+    
+    // compute Coulomb logarithm
+    double clog00 = mccc_coefs_clog(0, 0, config0);
+    double clog01 = mccc_coefs_clog(0, 1, config0);
+    double clog11 = mccc_coefs_clog(1, 1, config0);
+
     // build distribution at mesh nodes and print to file
     char filename[30];
     mkdir("./out/data", 0777);
@@ -286,7 +292,7 @@ void printState(
     if (config->normalize) {
         dt *= config->t0;
     }
-    fprintf(fout, "%d %d %d %e\n", config->nspecies, config->nmarkers, config->_nmarkers_outputmesh, dt);
+    fprintf(fout, "%d %d %d %e %e %e %e\n", config->nspecies, config->nmarkers, config->_nmarkers_outputmesh[0], dt, clog00, clog01, clog11);
     fprintf(fout, "%e %e %e %e %e %e %e %e\n", E, (E-E0)/E0, P[0], P[1], (P[0]-P0[0]), (P[1]-P0[1]), thermalAnalytic, dS);
     double T, Tx, Ty, n, m;
     for (int s=0; s<config->nspecies; s++) {
