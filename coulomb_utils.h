@@ -106,6 +106,7 @@ namespace Coulomb {
         double t0;
         double T0;
         double nu0;
+        double m0;
 
         // benchmark times
         double time_dsdv;

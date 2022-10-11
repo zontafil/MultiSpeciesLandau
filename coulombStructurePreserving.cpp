@@ -169,6 +169,7 @@ Config* normalizeConfig(Config* config) {
 
     double v0 = 0;
     double n0 = 0;
+    double m0 = CONST_ME;
     for (int s=0; s<ret->nspecies; s++) {
         v0 = fmax(v0, ret->species[s].xmax);
         v0 = fmax(v0, ret->species[s].ymax);
@@ -189,7 +190,7 @@ Config* normalizeConfig(Config* config) {
         printf("Specie %d eps %e eps_normalized %e\n", s, ret->species[s].eps*v0*v0, ret->species[s].eps);
         ret->species[s].Tx /= T0;
         ret->species[s].Ty /= T0;
-        ret->species[s].m /= CONST_ME;
+        ret->species[s].m /= m0;
         ret->species[s].q /= CONST_E;
         ret->species[s].n /= n0;
         ret->species[s].xmin /= v0;
@@ -209,6 +210,8 @@ Config* normalizeConfig(Config* config) {
     ret->t0 = t0;
     ret->T0 = T0;
     ret->nu0 = nu0;
+    ret->n0 = n0;
+    ret->m0 = m0;
     
     return ret;
 }
