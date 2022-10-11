@@ -98,6 +98,7 @@ namespace Coulomb {
         int recordAtStep; // print state every n-th step
         int recordMeshAtStep; // print mesh every n-th step
         int highResolutionMesh; // flag, use the highest resolution for building the output plot mesh
+        int writeMarkersPositions; // write markers position in addition to histogram
 
         // normalization constants
         int normalize; // normalize flag. Recommended to be set
