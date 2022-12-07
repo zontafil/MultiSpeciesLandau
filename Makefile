@@ -40,3 +40,5 @@ coulomb: main.o $(OBJ)
 
 clean:
 	rm -f *.o coulomb out/*.txt out/*.png out/*.eps out/*.avi out/data/*
+cleanData:
+	rm -f *.o coulomb out/*.txt out/data/*
