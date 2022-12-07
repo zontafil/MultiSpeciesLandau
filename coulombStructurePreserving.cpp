@@ -79,17 +79,21 @@ void Run(Config* config0) {
     config->time_eqmotion = 0;
     config->time_total = -getTime();
 
+    // restore states
+    if (config->restoreStates) {
     FILE* backupFile = fopen("out/data/backupStates.txt", "r+");
     if (backupFile != NULL) {
-       fscanf(backupFile, "%d\n", &nsteps);
+       int _ = fscanf(backupFile, "%d\n", &nsteps);
        nsteps++;
        t = nsteps * config0->dt;
        for (int s=0; s<config->nspecies; s++) {
            for (int i=0; i<config->nmarkers; i++) {
-                fscanf(backupFile, "%lf ", &p1[s][i].z[0]);
-                fscanf(backupFile, "%lf\n", &p1[s][i].z[1]);
+                _ = fscanf(backupFile, "%lf ", &p1[s][i].z[0]);
+                _ = fscanf(backupFile, "%lf\n", &p1[s][i].z[1]);
            }
        }
+    }
+        fclose(backupFile);
     }
 
     while (t<=config0->t1) {
@@ -313,6 +317,8 @@ void printState(
         fprintf(fout, "%e %e %e %e %e %e %s %e %e %d\n", E, V[0], V[1], T, Tx, Ty, config->species[s].name, n, m, config->_nmarkers_outputmesh[s]);
     }
 
+    // backup states
+    if (config->backupStates) {
     FILE* vout = fopen("out/data/backupStates.txt", "w+");
     fprintf(vout, "%d\n", t);
     for (int s=0; s<config->nspecies; s++) {
@@ -321,6 +327,7 @@ void printState(
         }
     }
     fclose(vout);
+    }
 
     if (t % config->recordMeshAtStep == 0) {
         mesh_distribution(f_mesh, p_mesh, p1, config);

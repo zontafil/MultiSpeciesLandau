@@ -120,6 +120,9 @@ namespace Coulomb {
         // internal variables
         int* _nmarkers_outputmesh;
 
+        int backupStates;
+        int restoreStates;
+
     } Config;
 }
 
