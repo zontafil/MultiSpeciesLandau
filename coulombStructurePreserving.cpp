@@ -442,8 +442,10 @@ double psi(Vector2d v, double eps) {
  */
 Particle2d* initMarkers(int s, Config* config, DistributionType type) {
     int nmarkers = config->nmarkers;
-    Particle2d* ret;
-    ret = new Particle2d[config->nmarkers];
+    // printf nmarkers
+    print_out(VERBOSE_NORMAL, "Number of markers: %d    ", nmarkers);
+    Particle2d* ret = new Particle2d[config->nmarkers];
+    Particle2d* retSorted = new Particle2d[config->nmarkers];
     int idx;
     Specie specie = config->species[s];
     for (int i = 0; i<config->ny; i++) {
@@ -471,7 +473,23 @@ Particle2d* initMarkers(int s, Config* config, DistributionType type) {
             ret[idx].weight = f(ret[idx].z, s, config);
         }
     }
-    return ret;
+
+    // sort ret by weight
+    for (int i=0; i<nmarkers; i++) {
+        double max = 0;
+        int maxIdx = 0;
+        for (int j=0; j<nmarkers; j++) {
+            if (ret[j].weight > max) {
+                max = ret[j].weight;
+                maxIdx = j;
+            }
+        }
+        retSorted[i] = ret[maxIdx];
+        ret[maxIdx].weight = 0;
+    }
+
+    return retSorted;
+
 }
 
 /**
