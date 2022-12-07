@@ -95,8 +95,8 @@ namespace Kernel {
     }
 
     /**
-     * @brief CUDA version of entropy gradient
-     * return - dS/dV / (m * w_p)
+     * @brief CUDA version of entropy
+     * Only needed for printing Entropy as diagnostic, but not for EOM
      */
     __global__ void cuda_S(
         double** ret,
