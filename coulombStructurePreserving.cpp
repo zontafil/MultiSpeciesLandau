@@ -274,7 +274,7 @@ void printState(
 
     // build distribution at mesh nodes and print to file
     char filename[30];
-    char filedist[30];
+    char filedist[40];
     mkdir("./out/data", 0777);
     snprintf (filename, sizeof filename, "out/data/step_C_%08d.txt", t);
     snprintf (filedist, sizeof filedist, "out/data/step_markers_%08d.txt", t);
@@ -344,7 +344,7 @@ void printState(
     }
     if (config->writeMarkersPositions == 1) {
         FILE* distrout = fopen(filedist, "w+");
-        fprintf(distrout, "%d %d %d %e %e %e %e\n", config->nspecies, config->nmarkers, config->_nmarkers_outputmesh, dt, clog00, clog01, clog11);
+        fprintf(distrout, "%d %d %e %e %e %e\n", config->nspecies, config->nmarkers, dt, clog00, clog01, clog11);
         for (int s=0; s<config->nspecies; s++) {
             for (int i=0; i<config->nmarkers; i++) {
                 fprintf(distrout, "%d %d %.15e %.15e %.15e\n", s, i, p1[s][i].z[0], p1[s][i].z[1], p1[s][i].weight);
