@@ -71,8 +71,21 @@ def Tthermal(t, ma, mb, n, l, Tax, Tay, Tbx, Tby):
     return ret
 
 def time_relaxation(n, ma, mb, l, Ta):
+    print("=== {} {} {} {} {}".format(n, ma, mb, l, Ta))
     # taken from i.e. Hinton 1976
-    nu = n * 16 * np.sqrt(np.pi*ma) * qe_SI**4 * l / (3*(4*np.pi*eps0)**2 * (Ta*qe_SI)**(1.5)) / ma
+    # nu = n * 16 * np.sqrt(np.pi*ma) * qe_SI**4 * l / (3*(4*np.pi*eps0)**2 * (Ta*qe_SI)**(1.5)) / ma
+    # nu = n * 4 * np.sqrt(2*np.pi*ma) * qe_SI**4 * l / (3*(4*np.pi*eps0)**2 * (Ta*qe_SI)**(1.5)) / ma
+    # nu = n * 2 * np.sqrt(np.pi*ma) * qe_SI**4 * l / (3*(4*np.pi*eps0)**2 * (Ta*qe_SI)**(1.5)) / ma
+
+    # code version
+    # nu = (2/3) * (n * np.sqrt(np.pi) * qe_SI**4 * l) / ((4*np.pi*eps0)**2 * np.sqrt(ma) * (Ta*qe_SI)**(1.5))
+
+    # paper version = 2D th speed
+    # nu = (16/3) * (n * np.sqrt(np.pi) * qe_SI**4 * l) / ((4*np.pi*eps0)**2 * np.sqrt(ma) * (Ta*qe_SI)**(1.5))
+
+    # hazel = lingam = 3D th speed
+    nu = (4*np.sqrt(2)/3) * (n * np.sqrt(np.pi) * qe_SI**4 * l) / ((4*np.pi*eps0)**2 * np.sqrt(ma) * (Ta*qe_SI)**(1.5))
+
     tau = 1 / nu
     return tau
 

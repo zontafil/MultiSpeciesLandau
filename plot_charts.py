@@ -82,8 +82,8 @@ class MultiSpeciesCharts:
 
         if enableLogScale:
             self.plt.xscale("log")
-        self.plt.ylim(bottom=1130, top=1134)
-        self.plt.xlim(left=10**(-5))
+        # self.plt.ylim(bottom=1130, top=1134)
+        # self.plt.xlim(left=10**(-5))
         current_values = self.plt.gca().get_yticks()
         self.plt.grid()
         self.plt.savefig("out/TemperatureSpecies.eps")

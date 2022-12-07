@@ -21,7 +21,6 @@ enableAnalyticFunctions = True
 
 files = glob.glob("./out/data/step_C*.txt")
 files.sort()
-files = files[:2]
 
 fmax = None
 nspecies = 0
@@ -230,7 +229,7 @@ if enableLinePlots:
     charts.plotEnergy(Eerr)
     charts.plotEnergySpecies(Especies)
     charts.plotPnorm(Pnorm)
-    charts.plotVAxes(VFlowSpecies, True, enableAnalyticFunctions)
+    charts.plotVAxes(VFlowSpecies, False, enableAnalyticFunctions)
     charts.plotPerr(Perr, Pnorm)
     charts.plotEntropy(dS)
     charts.plotTemperatureSpeciesAxes(TspeciesAxes, True, enableAnalyticFunctions)

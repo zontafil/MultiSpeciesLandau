@@ -45,11 +45,10 @@ file = open(files[0], "r")
 lines = file.readlines()
 nspecies = int(lines[0].strip().split(" ")[0])
 nMarkersPerDim = int(math.sqrt(float(lines[0].strip().split(" ")[1])))
-n = int(math.sqrt(float(lines[0].strip().split(" ")[2])))
-dt = float(lines[0].strip().split(" ")[3])
-vx = np.zeros([nspecies, n*n])
-vy = np.zeros([nspecies, n*n])
-f = np.zeros([nspecies, n*n])
+dt = float(lines[0].strip().split(" ")[2])
+vx = np.zeros([nspecies, nMarkersPerDim*nMarkersPerDim])
+vy = np.zeros([nspecies, nMarkersPerDim*nMarkersPerDim])
+f = np.zeros([nspecies, nMarkersPerDim*nMarkersPerDim])
 ntimes = len(files)
 times = np.zeros(ntimes)
 errs = np.zeros(ntimes)
@@ -79,7 +78,6 @@ for file_i, filename in enumerate(files):
     # record distribution
     if file_i == 0:
         print("nspecies {}".format(nspecies))
-        print("n {}".format(n))
         print("n Markers/Dim {}".format(nMarkersPerDim))
     if file_i % 20 == 0:
         print(filename)
