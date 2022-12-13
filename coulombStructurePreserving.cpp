@@ -22,24 +22,25 @@ void Run(Config* config0) {
         config->nu0 = 1.;
     }
 
-    // init markers
+    // init markers and meshes
     print_out(VERBOSE_NORMAL, "Initializing markers\n");
     Particle2d** p_mesh = new Particle2d*[config->nspecies];
     Particle2d** p0 = new Particle2d*[config->nspecies];
     Particle2d** p1 = new Particle2d*[config->nspecies];
     config->_nmarkers_outputmesh = new int(config->nspecies);
     for (int i=0; i<config->nspecies; i++) {
-        Specie specie = config->species[i];
+        Specie* specie = &config->species[i];
         p0[i] = initMarkers(i, config, config->distributionType);
         p1[i] = initMarkers(i, config, config->distributionType);
+        computeNeighborMeshParameters(specie, config);
         p_mesh[i] = initOutputPrintMesh(config, i);
 
         printf("Specie %d, n [1]: %e\n", i, nSpecie(p1, i, config));
-        printf("Specie %d, T0x [eV]: %e\n", i, specie.Tx);
-        printf("Specie %d, T0y [eV]: %e\n", i, specie.Ty);
+        printf("Specie %d, T0x [eV]: %e\n", i, specie->Tx);
+        printf("Specie %d, T0y [eV]: %e\n", i, specie->Ty);
         printf("Specie %d, T0comp [eV]: %e\n", i, TemperatureSpecie(p0, i, config));
-        printf("Specie %d, m [kg]: %e\n", i, specie.m);
-        printf("Specie %d, vmax [ms^-1] %e vmin [ms^-1] %e\n", i, specie.xmax, specie.xmin);
+        printf("Specie %d, m [kg]: %e\n", i, specie->m);
+        printf("Specie %d, vmax [ms^-1] %e vmin [ms^-1] %e\n", i, specie->xmax, specie->xmin);
         for (int s=0; s<config->nspecies; s++) {
             double clog = mccc_coefs_clog(i, s, config0);
             double nu_un = coefs_nu(i, s, config0);
@@ -104,6 +105,13 @@ void Run(Config* config0) {
 
         for (int s=0; s<config->nspecies; s++) {
             copy(p1[s], p1[s]+config->nmarkers, p0[s]);
+
+            // compute neighbor mesh indexes
+            print_out(VERBOSE_SILLY, "Computing neighbor mesh indexes for species %d\n", s);
+            for (int i=0; i<config->nmarkers; i++) {
+                computeParticleIndex(&p1[s][i], s, config);
+                print_out(VERBOSE_SILLY, "Particle %d: %d %d\n", i, p1[s][i].index[0], p1[s][i].index[1]);
+            }
         }
 
         if (nsteps%config->recordAtStep == 0) {
@@ -160,6 +168,21 @@ void Run(Config* config0) {
         free(f_mesh[s]);
     }
     free(p_mesh);
+}
+
+/** Compute the neighbor mesh parameters for a specie
+ * @param specie the specie
+ * @param config the configuration
+ */
+void computeNeighborMeshParameters(Specie* specie, Config* config) {
+    specie->neighborMesh.xmin = specie->xmin - (specie->xmax - specie->xmin) / 2.;
+    specie->neighborMesh.xmax = specie->xmax + (specie->xmax - specie->xmin) / 2.;
+    specie->neighborMesh.ymin = specie->ymin - (specie->ymax - specie->ymin) / 2.;
+    specie->neighborMesh.ymax = specie->ymax + (specie->ymax - specie->ymin) / 2.;
+    specie->neighborMesh.nx = config->nx / 1.;
+    specie->neighborMesh.ny = config->ny / 1.;
+    specie->neighborMesh.dx = (specie->neighborMesh.xmax - specie->neighborMesh.xmin) / specie->neighborMesh.nx;
+    specie->neighborMesh.dy = (specie->neighborMesh.ymax - specie->neighborMesh.ymin) / specie->neighborMesh.ny;
 }
 
 /**
@@ -489,6 +512,21 @@ Particle2d* initMarkers(int s, Config* config, DistributionType type) {
     }
 
     return retSorted;
+
+}
+
+/** 
+ * @brief Compute the index of the particle in the mesh
+ * 
+ * @param p 
+ * @param s 
+ * @param config 
+ */
+void computeParticleIndex(Particle2d* p, int s, Config* config) {
+
+    // compute the indexes of the particle and store into p->index
+    p->index[0] = int((p->z[0] - config->species[s].neighborMesh.xmin) / config->species[s].neighborMesh.dx);
+    p->index[1] = int((p->z[1] - config->species[s].neighborMesh.ymin) / config->species[s].neighborMesh.dy);
 
 }
 

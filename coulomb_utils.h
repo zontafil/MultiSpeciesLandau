@@ -51,8 +51,20 @@ enum {
 namespace Coulomb {
     typedef struct {
         double weight;
+        int index[2];
         Vector2d z;
     } Particle2d;
+
+    typedef struct {
+        int nx;
+        int ny;
+        double dx;
+        double dy;
+        double xmin;
+        double xmax;
+        double ymin;
+        double ymax;
+    } Mesh;
 
     typedef struct {
         int npeaks;
@@ -69,6 +81,7 @@ namespace Coulomb {
         double ymax;
         char name[20];
         double eps;
+        Mesh neighborMesh;
     } Specie;
 
     typedef enum {

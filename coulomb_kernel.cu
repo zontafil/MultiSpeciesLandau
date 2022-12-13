@@ -168,8 +168,17 @@ namespace Kernel {
                 kpy = config->kHermite[j] + ps1[i_p1].z[1] * SQRT2EPSM1;
 
                 for (int i_p2 = 0; i_p2<config->nmarkers; i_p2++) {
+                    // exit if the weight of the marker is too low
+                    if (p[s2][i_p2].weight * 0.1 < logsum) {
+                        break;
+                    }
+                    // exit if the distance is too large
+                    if (abs(p[s2][i_p2].index[0] - ps1[i_p1].index[0]) > 1 || abs(p[s2][i_p2].index[1] - ps1[i_p1].index[1]) > 1) {
+                        continue;
+                    }
                     dx = kpx - p[s2][i_p2].z[0] * SQRT2EPSM1;
                     dy = kpy - p[s2][i_p2].z[1] * SQRT2EPSM1;
+
                     logsum+=p[s2][i_p2].weight* exp(-dx*dx - dy*dy);
                 }
                 logsum = config->wHermite[i]*config->wHermite[j] * (1. + log(logsum * PI2EPSM1));

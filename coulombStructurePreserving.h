@@ -36,6 +36,8 @@ namespace Coulomb {
         VectorXd* dSdV,
         Config* config
     );
+    void computeNeighborMeshParameters(Specie* specie, Config* config);
+    void computeParticleIndex(Particle2d* p, int s, Config* config);
     double K(Particle2d** p, Config* config);
     double Kspecie(Particle2d** p, int s, Config* config);
     double nSpecie(
